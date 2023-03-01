@@ -22,6 +22,8 @@ Matrix Alpha_Beta_Mu(Matrix DR, Intrix iDates, Vector sp500, const Intor& iPerio
 void TestCalculations(int max);
 void RunCalculations(int max);
 
+//hva så røvhuller
+
 int main()
 {
     //sp500_Dates_to_monthly_dDate_periods();
