@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include "load.h"
 
 using namespace std;
 using Intor = vector<int>;
@@ -12,7 +13,7 @@ using Matrix = vector<vector<double>>;
 #define BACHELOR_CALCULATIONS_H
 
 double Calculate_stockBeta(Vector stock, const Vector& sp500, int iStart, int iEnd, int iStart_DR);      //TODO
-double Calculate_stockReturn(Vector stock, int iLength, int iStart_DR);             //TODO
+pair<double,double> Calculate_Return(Vector stock, int iLength, int iStart_DR);             //TODO
 double CovSP500(Vector Stock, Vector sp500, int iStart, int iEnd, int iStart_DR);   //TODO: Fix start date and end date
 double Var(Vector sp500, int Start_number, int End_number);                         //TODO: Fix start date and end date
 int day_after1926(int date);
@@ -28,18 +29,20 @@ double Calculate_stockBeta(Vector stock, const Vector& sp500, int iStart, int iE
     double stockSP500var = Var(sp500, iStart, iEnd);
     return (stockCov/stockSP500var);
 }
-double Calculate_stockReturn(Vector stock, int iLength, int iStart_DR)
+Vector Calculate_akk_Return(Vector stock, Vector sp500, Vector riskFree, int iLength, int iStart_DR, int iStart_sp500)
 {
-    double Return=1;
-    int trading_Days = 0;
-    for (int i = iStart_DR; i < iStart_DR + iLength; ++i)
+    double stockReturn=1, sp500Return=1, riskFreeReturn=1;
+    int Active_days = 0;
+    for (int i = 0; i < iLength; ++i)
     {
-        if(stock[i] == -2) continue;
-        trading_Days++;
-        Return*=(1 + stock[i]);
+        if(stock[i+iStart_DR] < -1.5) continue;
+        Active_days++;
+        stockReturn *= (1 + stock[i+iStart_DR]);
+        sp500Return *= (1 + sp500[i+iStart_sp500]);
+        riskFreeReturn *= (1 + riskFree[i+iStart_sp500]);
     }
-    return Return - 1;                                    //TODO: Return type
-    //return pow(Return,263.5104/trading_Days)-1;        //
+    return {stockReturn-1,sp500Return-1,riskFreeReturn-1};
+    //return pow(stockReturn,263.5104/Active_days)-1;
 }
 double CovSP500(Vector Stock, Vector sp500, int iStart, int iEnd, int iStart_DR)
 {
@@ -182,4 +185,27 @@ Intrix Remove_Missing_ID_Intrix(Intrix A, Vector v)
         if(v[k] == stock[0]) {k++;   B.push_back(stock);}
     }
     return B;
+}
+Intrix dPeriods_From_iPeriod(Intrix iPeriod)
+{
+    Intor Dates = Load_Intor("SP_Dates.txt");
+    for(int i =0; i<iPeriod.size(); i++)
+    {
+        iPeriod[i][0] = Dates[iPeriod[i][0]];
+        iPeriod[i][1] = Dates[iPeriod[i][1]];
+    }
+    return iPeriod;
+}
+int min_Val_Index(Vector v)
+{
+    int minIndex = 0;
+    for (int i = 1; i < v.size(); ++i)
+        if(v[i] < v[minIndex])
+            minIndex = i;
+    return minIndex;
+}
+Vector DailyYearly_to_DailyDaily_Return(Vector DailyYearly)
+{
+    for(double &e:DailyYearly)   e = pow(1.0+e,1/365.0)-1;
+    return DailyYearly;
 }

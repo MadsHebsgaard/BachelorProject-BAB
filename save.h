@@ -12,11 +12,13 @@ using Matrix = vector<vector<double>>;
 #define BACHELOR_SAVE_H
 
 Intrix Dates_to_iDates(Intrix Dates, Intor True_Dates, int start_j);
+Vector DailyYearly_to_DailyDaily_Return(Vector DailyYearly);
 
 void Save_Vector(const string& fn, const Vector& v)
 {
     ofstream fil(fn);
     if(!fil)    { cout << "Filåbning mislykkedes."; return;   }
+    cout << fixed << setprecision(11);
     for(double e : v)   fil << e << endl;
 }
 void Save_Intor(const string& fn, const Intor& v)
@@ -136,4 +138,8 @@ void Create_Files_from_DR(int max)
     Save_Intrix("iPeriod.txt", iPeriod);
 
     sp500_Dates_to_monthly_dDate_periods();
+
+    Vector DailyYearly = Load_Vector("DailyYearlyRiskFreeReturn.txt");
+    Vector DailyDaily = DailyYearly_to_DailyDaily_Return(DailyYearly);
+    Save_Vector("DailyRiskFreeReturn.txt", DailyDaily);
 }
