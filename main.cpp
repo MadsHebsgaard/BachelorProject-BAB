@@ -22,8 +22,6 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const
 void TestCalculations(int max);
 void RunCalculations(int max);
 
-//hva så røvhuller
-
 int main()
 {
     //sp500_Dates_to_monthly_dDate_periods();
