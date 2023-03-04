@@ -57,26 +57,24 @@ void TestCalculations(int max)
     cout << "Files was Loaded.\n\n";
 
     vector<Matrix> Data(0);
-    Vector beta(0); //TODO: One for mu and alpha too
+    Vector beta(0);
+    Vector alpha(0);
 
-    //Beta
-    int maxPeriods = iPeriod.size();
-    maxPeriods = 1;
-    for (int i = 0; i < maxPeriods; ++i)
+    for (int i = 0; i < iPeriod.size(); ++i)
     {
-        Matrix beta_mean = Beta_Alpha_Calculate(DR_ny, iDates, sp500, riskFree, iPeriod[i], 130);
-        Data.push_back(beta_mean);
-
+        Matrix beta_alpha = Beta_Alpha_Calculate(DR_ny, iDates, sp500, riskFree, iPeriod[i], 130);
+        Data.push_back(beta_alpha);
         if(i < 15)
-        {
-            cout << "n = "     << setw(5) << beta_mean[0].size();
-            cout << ",  Avg_B = " << setw(5) << Vector_Average(beta_mean[0]);
-            cout << ",  Avg_a = " << setw(5) << Vector_Average(beta_mean[1]) << endl;
-        }
-        //beta.insert(beta.end(), beta_mean[0].begin(), beta_mean[0].end());
+            cout << "n = " << setw(5) << beta_alpha[0].size() << ",  Avg_B = " << setw(5) << Vector_Average(beta_alpha[0]) << ",  Avg_a = " << setw(5) << Vector_Average(beta_alpha[1]) << endl;
+        beta.insert(beta.end(), beta_alpha[0].begin(), beta_alpha[0].end());
+        alpha.insert(alpha.end(), beta_alpha[1].begin(), beta_alpha[1].end());
+        //beta.push_back(999999);
+        //alpha.push_back(999999);
     }
-    Save_Vector("Data_beta.txt",Data[0][0]);
-    Save_Vector("Data_alpha.txt",Data[0][1]);
+    //Save_Vector("Data_beta.txt",beta);
+    //Save_Vector("Data_alpha.txt",alpha);
+    Save_Vector("Data_alpha_not_akk.txt",alpha);
+
 }
 void RunCalculations(int max)
 {
@@ -91,8 +89,8 @@ void RunCalculations(int max)
     Intrix iDates = Load_Intrix("DR_iDates.txt", max);
     iDates = Remove_Missing_ID_Intrix(iDates, Matrix_Column(DR_ny, 0));
 
-    //Intrix iPeriod = Load_Intrix("iPeriod.txt", -1);
-    Intrix iPeriod = Load_Intrix("Monthly_iPeriods.txt", -1);
+    //Intrix iPeriods = Load_Intrix("iPeriods.txt", -1);
+    Intrix iPeriods = Load_Intrix("Monthly_iPeriods.txt", -1);
 
     //Load sp500 stock returns
     Vector sp500 = Load_Vector("sp500.txt");
@@ -100,17 +98,17 @@ void RunCalculations(int max)
 
     cout << "Files was Loaded.\n\n";
 
-    vector<Matrix> Data(0);
+    Vector beta(0);
+    Vector alpha(0);
 
-    //Beta
-    for (int i = 0; i < iPeriod.size(); ++i)
+    for (auto & iPeriod : iPeriods)
     {
-        Matrix beta_mean = Beta_Alpha_Calculate(DR_ny, iDates, sp500, riskFree, iPeriod[i], 8);
-        Data.push_back(beta_mean);
-
-        cout << setw(9) << "n = " << beta_mean[0].size();
-        cout << setw(18) << "Avg_B = " << Vector_Average(beta_mean[0]) << endl;
+        Matrix beta_alpha = Beta_Alpha_Calculate(DR_ny, iDates, sp500, riskFree, iPeriod, 130);
+        beta.insert(beta.end(), beta_alpha[0].begin(), beta_alpha[0].end());
+        alpha.insert(alpha.end(), beta_alpha[1].begin(), beta_alpha[1].end());
     }
+    Save_Vector("Data_beta.txt",beta);
+    Save_Vector("Data_alpha.txt",alpha);
 }
 Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const Vector& riskFree, const Intor& iPeriod, int minTradingDaysInPeriod)
 {
@@ -152,7 +150,10 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const
         sp500_avg_Return = pow(1 + sp500_Return_akk, 263.5104 / Active_days) - 1;
         riskFree_avg_Return = pow(1 + RiskFree_Return_akk, 263.5104 / Active_days) - 1;
 
-        stockAlpha = stock_Return_akk - (pow(1 + stockBeta * (sp500_avg_Return - riskFree_avg_Return) + riskFree_avg_Return, Active_days / 263.5104) - 1); //TODO: /T
+        //stockAlpha = stock_Return_akk - (pow(1 + stockBeta * (sp500_avg_Return - riskFree_avg_Return) + riskFree_avg_Return, Active_days / 263.5104) - 1); //TODO: Tilbagediskunter med risikofrie rente
+
+        double stock_avg_Return = pow(1 + RiskFree_Return_akk, 263.5104 / Active_days) - 1;
+        stockAlpha = stock_avg_Return - (stockBeta * (sp500_avg_Return - riskFree_avg_Return) + riskFree_avg_Return); //TODO: Test this
 
         //cout << " " << riskFree_avg_Return << " ";
         //cout << iDates[i][0] << setw(5) << Active_days << ", sp500_Return_akk =" << setw(12) << sp500_Return_akk;
