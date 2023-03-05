@@ -14,7 +14,7 @@ using Matrix = vector<vector<double>>;
 
 double Calculate_stockBeta(Vector stock, const Vector& sp500, int iStart, int iEnd, int iStart_DR);      //TODO
 pair<double,double> Calculate_Return(Vector stock, int iLength, int iStart_DR);             //TODO
-double CovSP500(Vector Stock, Vector sp500, int iStart, int iEnd, int iStart_DR);   //TODO: Fix start date and end date
+double CovSP500(Vector Stock, Vector sp500, int iStart_sp500, int iEnd_sp500, int iStart_DR);   //TODO: Fix start date and end date
 double Var(Vector sp500, int Start_number, int End_number);                         //TODO: Fix start date and end date
 int day_after1926(int date);
 Intor Column_of_Intrix(Intrix A, int n);
@@ -44,20 +44,20 @@ Vector Calculate_akk_Return(Vector stock, Vector sp500, Vector riskFree, int iLe
     return {stockReturn-1,sp500Return-1,riskFreeReturn-1};
     //return pow(stockReturn,263.5104/Active_days)-1;
 }
-double CovSP500(Vector Stock, Vector sp500, int iStart, int iEnd, int iStart_DR)
+double CovSP500(Vector Stock, Vector sp500, int iStart_sp500, int iEnd_sp500, int iStart_DR)
 {
-    int d_iDates = iEnd - iStart + 1;
+    int d_iDates = iEnd_sp500 - iStart_sp500 + 1;
     double Mean_Stock = 0, Mean_sp500 = 0, Covv = 0;
     int trading_Days = 0;
 
     //Mean
     for (int i = 0; i < d_iDates; i++)
     {
-        if(Stock[i] != -2)
+        if(Stock[i+iStart_DR] != -2)
         {
             trading_Days++;
             Mean_Stock += Stock[i + iStart_DR];
-            Mean_sp500 += sp500[i + iStart];
+            Mean_sp500 += sp500[i + iStart_sp500];
         }
     }
     Mean_Stock /= trading_Days;
@@ -67,7 +67,7 @@ double CovSP500(Vector Stock, Vector sp500, int iStart, int iEnd, int iStart_DR)
     for (int i = 0; i < d_iDates; i++)
     {
         if(Stock[i] != -2)
-            Covv += (Stock[i+iStart_DR] - Mean_Stock) * (sp500[i + iStart] - Mean_sp500);
+            Covv += (Stock[i+iStart_DR] - Mean_Stock) * (sp500[i + iStart_sp500] - Mean_sp500);
     }
     return Covv /(trading_Days - 1);
 }
@@ -208,4 +208,45 @@ Vector DailyYearly_to_DailyDaily_Return(Vector DailyYearly)
 {
     for(double &e:DailyYearly)   e = pow(1.0+e,1/365.0)-1;
     return DailyYearly;
+}
+int DaysBetween(int iDate_from, int iDate_to) {
+    //TODO: iDates to dDates
+    int date1 = iDate_from;
+    int date2 = iDate_to;
+
+    // extract year, month, and day from date1
+    int year1 = date1 / 10000;
+    int month1 = (date1 / 100) % 100;
+    int day1 = date1 % 100;
+
+    // extract year, month, and day from date2
+    int year2 = date2 / 10000;
+    int month2 = (date2 / 100) % 100;
+    int day2 = date2 % 100;
+
+    // calculate the number of days between the two dates
+    int days1 = year1 * 365 + std::floor((year1 - 1) / 4.0) - std::floor((year1 - 1) / 100.0) + std::floor((year1 - 1) / 400.0) + std::floor((367 * month1 - 362) / 12.0) + ((month1 <= 2) ? 0 : ((year1 % 4 == 0 && year1 % 100 != 0) || year1 % 400 == 0) ? -1 : -2) + day1;
+    int days2 = year2 * 365 + std::floor((year2 - 1) / 4.0) - std::floor((year2 - 1) / 100.0) + std::floor((year2 - 1) / 400.0) + std::floor((367 * month2 - 362) / 12.0) + ((month2 <= 2) ? 0 : ((year2 % 4 == 0 && year2 % 100 != 0) || year2 % 400 == 0) ? -1 : -2) + day2;
+    return std::abs(days1 - days2);
+}
+double Calculate_StockAlpha(double stockBeta, double stock_Return_akk, double sp500_Return_akk, double RiskFree_Return_akk, double Active_years)
+{
+    //TODO: Tilbagediskunter med risikofrie rente?
+    double alpha;
+    double stock_avg_Return = pow(1 + RiskFree_Return_akk, Active_years) - 1;
+    double sp500_avg_Return = pow(1 + sp500_Return_akk, 1/Active_years) - 1;
+    double riskFree_avg_Return = pow(1 + RiskFree_Return_akk, 1/Active_years) - 1;
+
+    alpha = stock_Return_akk - (stockBeta * (sp500_Return_akk - RiskFree_Return_akk) + RiskFree_Return_akk);
+
+    /*//Old way
+    double SML = stockBeta * (sp500_avg_Return - riskFree_avg_Return) + riskFree_avg_Return;
+    if (SML > -1)
+        stockAlpha = stock_Return_akk - (pow(1.0 + SML, Active_years) - 1.0);
+    else    //Avoids nan. Maybe makes sence?
+        stockAlpha = stock_Return_akk - (-pow(-(1.0 + SML), Active_years) - 1.0);*/
+
+    //stockAlpha = stock_avg_Return - (stockBeta * (sp500_avg_Return - riskFree_avg_Return) + riskFree_avg_Return);
+
+    return alpha;
 }
