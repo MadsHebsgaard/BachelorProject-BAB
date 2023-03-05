@@ -21,3 +21,7 @@ cmake-build-debug/Data_PERMNO.txt
 cmake-build-debug/Data_beta.txt
 cmake-build-debug/Data_akk_return.txt
 cmake-build-debug/Data_alpha.txt
+cmake-build-debug/DataRun_akk_return.txt
+cmake-build-debug/DataRun_alpha.txt
+cmake-build-debug/DataRun_beta.txt
+cmake-build-debug/DataRun_PERMNO.txt
