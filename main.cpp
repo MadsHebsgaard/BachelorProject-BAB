@@ -26,7 +26,7 @@ int main()
 {
     //Create_Files_from_DR(-1);
     //TestCalculations(-1, 0.4, 75);
-    RunCalculations(100, 0.4, 75);
+    RunCalculations(-1, 0.4, 75);
 }
 
 void TestCalculations(int max, double max_ratio, int minTradingDays)
@@ -85,7 +85,8 @@ void RunCalculations(int max, double max_ratio, int minTradingDays)
     iDates = Remove_Missing_ID_Intrix(iDates, Matrix_Column(DR_ny, 0));
 
     //Intrix iPeriods = Load_Intrix("iPeriods.txt", -1);
-    Intrix iPeriods = Load_Intrix("Monthly_iPeriods.txt", -1);
+    //Intrix iPeriods = Load_Intrix("Monthly_iPeriods.txt", -1);
+    Intrix iPeriods = Load_Intrix("Yearly_iPeriods_1998_2021.txt", -1);
 
     //Load sp500 and riskFree returns & SP500 dates
     Vector sp500 = Load_Vector("sp500.txt");
@@ -158,5 +159,7 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const
         sp500_return_akk.push_back(sp500_Return_akk);
         PERMNO.push_back(DR[i][0]);
     }
+    //double avg_sp500 = Calculate_akk_Return(sp500, sp500, riskFree, riskFree.size(), 0, 0)[1];
+    //double avg_riskFree = Calculate_akk_Return(sp500, sp500, riskFree, riskFree.size(), 0, 0)[2];
     return {beta, alpha, stock_return_akk, PERMNO};
 }
