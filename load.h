@@ -11,6 +11,18 @@ using Matrix = vector<vector<double>>;
 
 #define BACHELOR_LOAD_H
 
+void HowToGetStarted()
+{
+    mkdir("Input_Data");
+    mkdir("Input_Data/Exo_Files");
+    cout << "\nYou need to put the following files in the folder \"Input_Files\":\n";
+    cout << "   - " << "DR_No_Ticker\n";
+    cout << "   - " << "DailyYearlyRiskFreeReturn\n";
+    cout << "   - " << "sp500\n";
+    cout << "   - " << "DateList\n";
+
+    cout << "When all the files are present, Run \"Create_Files()\".\n\n";
+}
 Vector Load_Vector(const string& fn)
 {
     ifstream fil(fn);
@@ -55,7 +67,7 @@ Intor Load_Intor(const string& fn)
         fil >> e;
         v.push_back(e);
     }
-    cout << "Load_Intor: Sucssesfully loaded " << v.size() << " elements from " << fn << " to Intor.\n";
+    cout << "\nLoad_Intor: Sucssesfully loaded " << v.size() << " elements from " << fn << " to Intor.\n";
     return v;
 }
 Intrix Load_Dates(const string& fn)
@@ -208,6 +220,9 @@ Matrix Load_DR_Compressed(const string& fn, int max)
 
     Vector Stock;
     Matrix DR;
+
+    Stock.reserve(100000);
+    DR.reserve(37000);
     int n, i=0;
 
     while(fil >> n)
@@ -241,10 +256,10 @@ Intrix Load_Intrix(const string& fn, int max)
         for (int j = 0; j < n; ++j)
             fil >> A[i][j];
 
-    if ( A[0].size() == A[1].size() and A[0].size() == A[A.size()-1].size() )
+    /*if ( A[0].size() == A[1].size() || A[0].size() == A[A.size()-1].size() )
         cout << "Load_Intrix: Sucessfully loaded (" << A.size() << " x " << A[0].size() << ") Intrix to " << fn << ".\n";
     else    cout << "Load_Intrix: Sucssesfully loaded (" << A.size() << " x X) to Intrix.\n";
-
+*/
     return A;
 }
 Intrix Load_StockDays_from_DR(const string& fn, int max)

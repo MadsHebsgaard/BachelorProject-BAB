@@ -146,23 +146,23 @@ Intrix Dates_to_iDates(Intrix Dates, Intor True_Dates, int start_j)
 Matrix Edit_DR(Matrix A, double max_ratio, int minTradingDays)
 {
     Matrix DR_ny(0);
-    int træk, zero_total;
-    int max_træk = 6;
+    int traek, zero_total;
+    int max_traek = 6;
     int replace = -2;
     int continue_amount = 0;
 
     for (auto & stock : A)
     {
         zero_total = 0;
-        træk = 0;
+        traek = 0;
         if (stock.size() < minTradingDays)   {continue_amount++; continue;}
         for (int j = 0; j < stock.size(); ++j)
         {
-            if(stock[j] == 0 or stock[j] == replace)    {træk++; zero_total++;}
-            else                 træk = 0;
+            if(stock[j] == 0 or stock[j] == replace)    {traek++; zero_total++;}
+            else                 traek = 0;
 
-            if      (træk == max_træk)  for(int k = 1; k <= max_træk; ++k) stock[j - max_træk + k] = replace;
-            else if (træk > max_træk) stock[j] = replace;
+            if      (traek == max_traek)  for(int k = 1; k <= max_traek; ++k) stock[j - max_traek + k] = replace;
+            else if (traek > max_traek) stock[j] = replace;
         }
         if((zero_total+0.0) / stock.size() < max_ratio)  {DR_ny.push_back(stock);           /*cout << endl << "zero_total:" << zero_total << "  size: " << A[stock].size();*/}
         //else cout << endl << stock << "   " << A[stock][0] << "  " << (zero_total+0.0)/A[stock].size();
@@ -196,6 +196,25 @@ Intrix dPeriods_From_iPeriod(Intrix iPeriod)
     }
     return iPeriod;
 }
+Intrix Yearly_iPeriods(Intor DateList)
+{
+    int i = 0, periodStart = DateList[0];
+
+    i = 0;
+    periodStart = DateList[0];
+    Intrix YearlyPeriods(0);
+    while (DateList[i] < 99999999)
+    {
+        if((DateList[i] - periodStart) > 4000) //40 for monthly
+        {
+            YearlyPeriods.push_back({periodStart, DateList[i - 1]});
+            periodStart = DateList[i];
+        }
+        i++;
+    }
+    Intrix Yearly_iPeriods = Dates_to_iDates(YearlyPeriods, DateList, 0);
+    return Yearly_iPeriods;
+}
 int min_Val_Index(Vector v)
 {
     int minIndex = 0;
@@ -206,7 +225,18 @@ int min_Val_Index(Vector v)
 }
 Vector DailyYearly_to_DailyDaily_Return(Vector DailyYearly)
 {
-    for(double &e:DailyYearly)   e = pow(1.0+e,1/365.0)-1;
+    Intor SP_Dates =            Load_Intor("SP_Dates.txt");
+    Intrix Yearly_iPeriods =    Load_Intrix("Yearly_iPeriods.txt",-1);
+    int TradingDays;
+
+    for(auto &period:Yearly_iPeriods)
+    {
+        TradingDays = period[1]-period[0]+1;
+        for (int i = period[0]; i <= period[1]; ++i)
+        {
+            DailyYearly[i] = pow(1.0 + DailyYearly[i],1.0/TradingDays)-1.0;
+        }
+    }
     return DailyYearly;
 }
 int DaysBetween(int iDate_from, int iDate_to) {
@@ -249,4 +279,103 @@ double Calculate_StockAlpha(double stockBeta, double stock_Return_akk, double sp
     //stockAlpha = stock_avg_Return - (stockBeta * (sp500_avg_Return - riskFree_avg_Return) + riskFree_avg_Return);
 
     return alpha;
+}
+vector<Intrix> convertToThreeDimVec(const Intrix& iPeriods, int x, bool rest_in_first_period)
+{
+    int numRowsPerVec = floor(iPeriods.size() / x);
+    int rest = iPeriods.size() - x * numRowsPerVec;
+
+    vector<vector<vector<int>>> threeDimVec(x, vector<vector<int>>(numRowsPerVec, vector<int>(2)));
+
+    int currRow = 0;
+
+    for (int i = 0; i < x; i++) {
+        for (int j = 0; j < numRowsPerVec; j++) {
+            threeDimVec[i][j][0] = iPeriods[currRow][0];
+            threeDimVec[i][j][1] = iPeriods[currRow][1];
+            currRow++;
+        }
+        if(i==0)
+        {
+            if(rest_in_first_period)
+            {
+                if (rest > 0)
+                {
+                    for (int i = 0; i < rest; ++i)
+                    {
+                        threeDimVec[0].push_back({iPeriods[currRow][0],iPeriods[currRow][1]});
+                        currRow++;
+                    }
+                }
+            }
+        }
+    }
+
+    cout << "Periods of years was made to be (" << x << " x " << numRowsPerVec << ")";
+    if(rest > 0)
+    {
+        if(rest_in_first_period)
+            cout << ", last period have " << numRowsPerVec+rest << "periods.";
+        else
+            cout << ", last period also have " << numRowsPerVec << "periods, so " << rest << " yeas was not included in any period.";
+    }
+    else
+        cout << ".";
+
+    return threeDimVec;
+}
+Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const Vector& riskFree, const Intor& Dates, const Intor& iPeriod, int minTradingDaysBeforePeriod)
+{
+    Vector cov(0), sp500_Var(0), beta(0), stock_return_akk(0), sp500_return_akk(0), alpha(0), PERMNO(0), riskFree_Return_akk;
+    int iStart_sp500, iEnd_sp500, iStart_DR, iLength, Active_days;
+    double stockBeta, stockAlpha, sp500_Return_akk, stock_Return_akk, RiskFree_Return_akk, Active_years;
+    Vector akk_stock_sp500_RiskFree_Return;
+    int emptyCount;
+
+    for (int i = 0; i < DR.size(); ++i)
+    {
+        //Krav for at aktien skal være med i periodens udregning (dvs. købes)
+        if(iDates[i][1] > iPeriod[0] - minTradingDaysBeforePeriod)    continue;
+
+        //Aktiens og sp500's start, slut og løbetid
+        iStart_DR = 1 + (iPeriod[0] - iDates[i][1]);       //index where period start in DR[i]
+        iStart_sp500 = iPeriod[0];                         //sp500 start index      //iStart_sp500 = iDates[i][1] + iStart_DR-1;
+        iEnd_sp500 = min(iDates[i][2], iPeriod[1]);        //sp500 end index
+        iLength = iEnd_sp500 - iStart_sp500 + 1;           //iDates total
+
+        //Dage og år aktien er aktiv (har returns != -2)
+        emptyCount=0;   if(iLength > 0) for(int j = iStart_DR; j < iStart_DR+iLength; ++j)  if(DR[i][j] == -2)  emptyCount++;
+        Active_days = iLength - emptyCount;
+        Active_years = (DaysBetween(Dates[iStart_sp500], Dates[iStart_sp500+Active_days]) + 0.0) / 365.24;
+
+        //Yderligere krav om at aktien ikke dør indenfor meget få dage //TODO: skaber bias, skal helst fjernes/mindskes på sigt
+        if((Active_days) < 10) continue;
+
+        //Calculate beta
+        stockBeta = Calculate_stockBeta(DR[i], sp500, iStart_sp500, iEnd_sp500, iStart_DR);
+
+        //Calculate akk. returns
+        akk_stock_sp500_RiskFree_Return = Calculate_akk_Return(DR[i], sp500, riskFree, iLength, iStart_DR, iStart_sp500);
+        stock_Return_akk = akk_stock_sp500_RiskFree_Return[0];
+        sp500_Return_akk = akk_stock_sp500_RiskFree_Return[1];
+        RiskFree_Return_akk = akk_stock_sp500_RiskFree_Return[2];
+
+        //Calculate alpha
+        stockAlpha = Calculate_StockAlpha(stockBeta, stock_Return_akk, sp500_Return_akk, RiskFree_Return_akk, Active_years);
+
+        //Save data to vectors
+        beta.push_back(stockBeta);
+        alpha.push_back(stockAlpha);
+        stock_return_akk.push_back(stock_Return_akk);
+        sp500_return_akk.push_back(sp500_Return_akk);
+        riskFree_Return_akk.push_back(RiskFree_Return_akk);
+        PERMNO.push_back(DR[i][0]);
+    }
+    //double avg_sp500 = Calculate_akk_Return(sp500, sp500, riskFree, riskFree.size(), 0, 0)[1];
+    //double avg_riskFree = Calculate_akk_Return(sp500, sp500, riskFree, riskFree.size(), 0, 0)[2];
+    return {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk};
+}
+inline bool filePath_exists(const std::string& name) {
+    ifstream f(name.c_str());
+    return f.good();
 }

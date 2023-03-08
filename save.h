@@ -11,14 +11,13 @@ using Matrix = vector<vector<double>>;
 #pragma once
 #define BACHELOR_SAVE_H
 
-Intrix Dates_to_iDates(Intrix Dates, Intor True_Dates, int start_j);
-Vector DailyYearly_to_DailyDaily_Return(Vector DailyYearly);
+#include "calculations.h"
 
 void Save_Vector(const string& fn, const Vector& v)
 {
     ofstream fil(fn);
     if(!fil)    { cout << "Filåbning mislykkedes."; return;   }
-    cout << fixed << setprecision(11);
+    cout << fixed << setprecision(15);
     for(double e : v)   fil << e << endl;
 }
 void Save_Intor(const string& fn, const Intor& v)
@@ -70,76 +69,43 @@ void Compress_DR_StockDays(const string& fn, Intrix StockDays)
     }
     cout << "Compress_DR_StockDays: Sucssesfully Compressed/Saved daily 'dates' of " << StockDays.size() << " stocks to " << fn << ".\n";
 }
-void sp500_Dates_to_monthly_dDate_periods()
-{
-    Intor allDates = Load_Intor("SP_Dates.txt");
-    int i = 0, periodStart = allDates[0];
-    Intrix MonthlyPeriods(0);
 
-    while (allDates[i] < 99999999)
+void Create_Files() {
+    string Exo_FilePath = "Input_Data/Exo_Files/";
+    string Proccessed_FilePath = "Input_Data/Processed_Files/";
+
+    if (filePath_exists(Exo_FilePath + "sp500.txt") && filePath_exists(Exo_FilePath + "DR_No_Ticker.txt") && filePath_exists(Exo_FilePath + "DateList.txt") &&filePath_exists(Exo_FilePath + "DailyYearlyRiskFreeReturn.txt"))
     {
-        if( (allDates[i] - periodStart) > 40)
-        {
-            MonthlyPeriods.push_back({periodStart, allDates[i-1]});
-            periodStart = allDates[i];
-        }
-        i++;
+        mkdir("Input_Data/Processed_Files");
+        int max = 99999999;
+
+        //Daily Return on each stock compressed
+        Matrix DR = Load_DR(Exo_FilePath + "DR_No_Ticker.txt", max);
+        Compress_DR(Proccessed_FilePath + "DR_Compressed.txt", DR);
+
+        //Each Stock's lifespan
+        Intrix DR_Dates = Load_Dates_from_DR(Exo_FilePath + "DR_No_Ticker.txt");
+        Save_Intrix(Proccessed_FilePath + "DR_Dates.txt", DR_Dates);
+        //Intrix DR_Dates = Load_Intrix(Proccessed_FilePath+"DR_Dates.txt",-1);
+
+        //DR_iDates, Stock's lifespan in index values starting from (0) the first recorded data date.
+        Intor DateList = Load_Intor(Exo_FilePath + "DateList.txt");
+        Intrix DR_iDates = Dates_to_iDates(DR_Dates, DateList, 1);
+        Save_Intrix(Proccessed_FilePath + "DR_iDates.txt", DR_iDates);
+
+        //iPeriods
+        Intrix iPeriods = Yearly_iPeriods(DateList);
+        Save_Intrix(Proccessed_FilePath + "iPeriods.txt", iPeriods);
+
+        //DailyDailyRFR
+        Vector DailyYearlyRFR = Load_Vector(Exo_FilePath + "DailyYearlyRiskFreeReturn.txt");
+        Vector DailyDailyRFR = DailyYearly_to_DailyDaily_Return(DailyYearlyRFR);
+        Save_Vector(Proccessed_FilePath + "riskFreeReturn.txt", DailyDailyRFR);
+
+        //Other files, usefull for testing
+        //Intrix StockDays = Load_StockDays_from_DR("DR_No_Ticker.txt", max);
+        //Compress_DR_StockDays("DR_StockDays.txt", StockDays);
     }
-    //Save_Intrix("Monthly_dPeriods.txt", MonthlyPeriods);
-    Intrix Monthly_iPeriods = Dates_to_iDates(MonthlyPeriods,allDates,0);
-    Save_Intrix("Monthly_iPeriods.txt", Monthly_iPeriods);
-
-
-    i = 0;
-    periodStart = allDates[0];
-    Intrix YearlyPeriods(0);
-    while (allDates[i] < 99999999)
-    {
-        if( (allDates[i] - periodStart) > 4000)
-        {
-            YearlyPeriods.push_back({periodStart, allDates[i-1]});
-            periodStart = allDates[i];
-        }
-        i++;
-    }
-    Intrix Yearly_iPeriods = Dates_to_iDates(YearlyPeriods,allDates,0);
-    Save_Intrix("Yearly_iPeriods.txt", Yearly_iPeriods);
-}
-void Create_Files_from_DR(int max)
-{
-    //Need files:
-    //DR_NO_Ticker.txt
-    //SP_Dates
-    //Period_Dates.txt  (optional if needing periods)
-
-    //DR
-    Matrix DR = Load_DR("DR_No_Ticker.txt", max);
-    Compress_DR("DR_Compressed.txt", DR);
-
-    //StockDays - Usefull while testing
-    Intrix StockDays = Load_StockDays_from_DR("DR_No_Ticker.txt", max);
-    Compress_DR_StockDays("DR_StockDays.txt", StockDays);
-
-    //DR_Dates
-    Intrix DR_Dates = Load_Dates_from_DR("DR_No_Ticker.txt");
-    Save_Intrix("DR_Dates.txt", DR_Dates);
-
-    //iDates
-    Intor SP_Dates = Load_Intor("SP_Dates.txt");
-    Intrix iDates = Dates_to_iDates(DR_Dates, SP_Dates, 1);
-    Save_Intrix("DR_iDates.txt", iDates);
-
-    //iPeriod
-    Intrix dPeriod = Load_Intrix("Period_Dates.txt", -1);
-    Save_Intrix("dPeriod.txt", dPeriod);
-
-    //Intrix dPeriod = Load_Intrix("dPeriod.txt", -1);
-    Intrix iPeriod = Dates_to_iDates(dPeriod, SP_Dates, 0);
-    Save_Intrix("iPeriod.txt", iPeriod);
-
-    sp500_Dates_to_monthly_dDate_periods();
-
-    Vector DailyYearly = Load_Vector("DailyYearlyRiskFreeReturn.txt");
-    Vector DailyDaily = DailyYearly_to_DailyDaily_Return(DailyYearly);
-    Save_Vector("DailyRiskFreeReturn.txt", DailyDaily);
+    else
+        HowToGetStarted();
 }
