@@ -13,15 +13,17 @@ using Matrix = vector<vector<double>>;
 
 void HowToGetStarted()
 {
-    mkdir("Input_Data");
-    mkdir("Input_Data/Exo_Files");
-    cout << "\nYou need to put the following files in the folder \"Input_Files\":\n";
+    mkdir("Data");
+    mkdir("Data/Input");
+    string exoDirName = "Data/Input/Exo_Files";
+    mkdir(exoDirName.c_str());
+    cout << "\nYou need to put the following files in the folder \"" << exoDirName << "\":" << endl;
     cout << "   - " << "DR_No_Ticker\n";
     cout << "   - " << "DailyYearlyRiskFreeReturn\n";
     cout << "   - " << "sp500\n";
     cout << "   - " << "DateList\n";
 
-    cout << "When all the files are present, Run \"Create_Files()\".\n\n";
+    cout << "When all the files are present, Run \"Create_Files()\"." << endl << endl;
 }
 Vector Load_Vector(const string& fn)
 {

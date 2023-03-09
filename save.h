@@ -71,12 +71,13 @@ void Compress_DR_StockDays(const string& fn, Intrix StockDays)
 }
 
 void Create_Files() {
-    string Exo_FilePath = "Input_Data/Exo_Files/";
-    string Proccessed_FilePath = "Input_Data/Processed_Files/";
+    string Exo_FilePath = "Data/Input/Exo_Files/";
+    string Proccessed_FilePath = "Data/Input/Processed_Files/";
+    const std::vector<std::string> filenames = {"sp500.txt", "DR_No_Ticker.txt", "DateList.txt", "DailyYearlyRiskFreeReturn.txt"};
 
-    if (filePath_exists(Exo_FilePath + "sp500.txt") && filePath_exists(Exo_FilePath + "DR_No_Ticker.txt") && filePath_exists(Exo_FilePath + "DateList.txt") &&filePath_exists(Exo_FilePath + "DailyYearlyRiskFreeReturn.txt"))
+    if (areFilesExistInDirectory(filenames, Exo_FilePath))
     {
-        mkdir("Input_Data/Processed_Files");
+        mkdir("Data/Input/Processed_Files");
         int max = 99999999;
 
         //Daily Return on each stock compressed
@@ -104,7 +105,8 @@ void Create_Files() {
 
         //Other files, usefull for testing
         //Intrix StockDays = Load_StockDays_from_DR("DR_No_Ticker.txt", max);
-        //Compress_DR_StockDays("DR_StockDays.txt", StockDays);
+        //Compress_DR_StockDays("DR_StockDays.txt", StockDays);    } else {
+        cout << "Some files do not exist\n";
     }
     else
         HowToGetStarted();

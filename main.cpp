@@ -26,16 +26,15 @@ void RunCalculations(string folderName, double max_ratio, int minTradingDays, in
 
 int main()
 {
-    //HowToGetStarted();
-    //Create_Files();
-    Matrix DR = Load_DR_Compressed("Input_Data/Processed_Files/DR_Compressed.txt", 500);
-    RunCalculations("Run", 0.4, 75, 95, DR);
+    Create_Files();
+    //Matrix DR = Load_DR_Compressed("Data/Input/Processed_Files/DR_Compressed.txt", 500);
+    //RunCalculations("Run", 0.4, 75, 95, DR);
 }
 
 void RunCalculations(string folderName, double max_ratio, int minTradingDays, int n_periods, Matrix DR)
 {
-    string Exo_FilePath = "Input_Data/Exo_Files/";
-    string Proccessed_FilePath = "Input_Data/Processed_Files/";
+    string Exo_FilePath = "Data/Input/Exo_Files/";
+    string Proccessed_FilePath = "Data/Input/Processed_Files/";
 
     //DR with condition for inclusion
     Matrix DR_ny = Edit_DR(DR,max_ratio,minTradingDays);
@@ -58,8 +57,8 @@ void RunCalculations(string folderName, double max_ratio, int minTradingDays, in
     Intrix iPeriods = Load_Intrix(Proccessed_FilePath+"iPeriods.txt", -1);
     vector<Intrix> Era_List = convertToThreeDimVec(iPeriods, n_periods, true);
 
-    mkdir("Output_Data");
-    folderName = "Output_Data/" + folderName;
+    mkdir("Data/Output");
+    folderName = "Data/Output/" + folderName;
     mkdir(folderName.c_str());
     for (int i = 0; i < Era_List.size(); ++i)
     {

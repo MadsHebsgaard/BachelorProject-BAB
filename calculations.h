@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include "load.h"
+#include <filesystem> // Requires C++17 or later //Might introduce problems for some computers
 
 using namespace std;
 using Intor = vector<int>;
@@ -378,4 +379,18 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const
 inline bool filePath_exists(const std::string& name) {
     ifstream f(name.c_str());
     return f.good();
+}
+
+bool areFilesExistInDirectory(const std::vector<std::string>& filenames, const std::string& directoryPath)
+{
+    bool allExist = true;
+    for (const auto& filename : filenames) {
+        const auto filepath = directoryPath + filename;
+        if (!std::filesystem::exists(filepath)) {
+            std::cerr << "File " << filepath << " does not exist\n";
+            allExist = false;
+        }
+    }
+    if(allExist)    return true;
+    else            return false;
 }
