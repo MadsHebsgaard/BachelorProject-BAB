@@ -224,13 +224,10 @@ int min_Val_Index(Vector v)
             minIndex = i;
     return minIndex;
 }
-Vector DailyYearly_to_DailyDaily_Return(Vector DailyYearly)
+Vector DailyYearly_to_DailyDaily_Return(Vector DailyYearly, Intrix iPeriods)
 {
-    Intor SP_Dates =            Load_Intor("SP_Dates.txt");
-    Intrix Yearly_iPeriods =    Load_Intrix("Yearly_iPeriods.txt",-1);
     int TradingDays;
-
-    for(auto &period:Yearly_iPeriods)
+    for(auto &period:iPeriods)
     {
         TradingDays = period[1]-period[0]+1;
         for (int i = period[0]; i <= period[1]; ++i)

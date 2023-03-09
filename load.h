@@ -23,7 +23,7 @@ void HowToGetStarted()
     cout << "   - " << "sp500\n";
     cout << "   - " << "DateList\n";
 
-    cout << "When all the files are present, Run \"Create_Files()\"." << endl << endl;
+    cout << "When all the files are present, Run \"Process_Files()\"." << endl << endl;
 }
 Vector Load_Vector(const string& fn)
 {
@@ -61,7 +61,7 @@ Matrix Load_Matrix(const string& fn)
 Intor Load_Intor(const string& fn)
 {
     ifstream fil(fn);
-    if(!fil) {  cout << "Load_Intor: Could not read the file " << fn << ".";  return Intor(0);   }
+    if(!fil) {  cout << "Load_Intor: Could not read the file " << fn << ".\n";  return Intor(0);   }
     Intor v;
     int e;
     while(!fil.eof())
@@ -69,7 +69,7 @@ Intor Load_Intor(const string& fn)
         fil >> e;
         v.push_back(e);
     }
-    cout << "\nLoad_Intor: Sucssesfully loaded " << v.size() << " elements from " << fn << " to Intor.\n";
+    //cout << "\nLoad_Intor: Sucssesfully loaded " << v.size() << " elements from " << fn << " to Intor.\n";
     return v;
 }
 Intrix Load_Dates(const string& fn)
@@ -100,7 +100,7 @@ Intrix Load_Dates(const string& fn)
         A.push_back(Stock);
         i++;
     }
-    cout << "All " << i << " dates was loaded sucsessfully.";
+    //cout << "All " << i << " dates was loaded sucsessfully.";
     return A;
 }
 Matrix Load_DR(const string& fn, int max)
@@ -119,7 +119,7 @@ Matrix Load_DR(const string& fn, int max)
     fil >> junk;
     fil >> IDnew;
 
-    cout << "Loaded 0/36148 = 0%.\n";
+    cout << "Loaded 0/~36150 = 0%.\n";
 
     while(!fil.eof())
     {
@@ -171,16 +171,16 @@ Matrix Load_DR(const string& fn, int max)
         }
         DR.push_back(Stock);
         i++;
-        if(i % 500 == 0) cout << "Loaded " << i << "/36148 = " << i/361.48 << "%.\n";
+        if(i % 500 == 0) cout << "Loaded " << i << "/~36150 = " << i/361.5 << "%.\n";
         if(i==max)   break;
     }
-    cout << "Loaded " << i << "/36148 = " << i / 361.48 << "%.\n";
+    cout << "Loaded " << i << "/~36150 = " << i / 361.5 << "%.\n";
     return DR;
 }
 Intrix Load_Dates_from_DR(const string& fn)
 {
     ifstream fil(fn);
-    if(!fil) {  cout << "Could not read the file " << fn << ".";  return Intrix(0);   }
+    if(!fil) {  cout << "Load_Dates_from_DR: Could not read the file " << fn << ".";  return Intrix(0);   }
     Intrix Dates;
     Intor Stock;
     int IDnew, date, i=0;
@@ -191,7 +191,7 @@ Intrix Load_Dates_from_DR(const string& fn)
     fil >> junk;
     fil >> junk;
     fil >> IDnew;
-    cout << "Loaded 0/36148 = 0%.\n";
+    cout << "Load_Dates_from_DR: Loaded 0/~36150 = 0%.\n";
 
     while(!fil.eof())
     {
@@ -210,9 +210,9 @@ Intrix Load_Dates_from_DR(const string& fn)
         Stock.push_back(date);
         Dates.push_back(Stock);
         i++;
-        if(i % 500 == 0) cout << "Loaded " << i << "/36148 = " << i/361.48 << "%.\n";
+        if(i % 500 == 0) cout << "Load_Dates_from_DR: Loaded " << i << "/~36150 = " << i/361.48 << "%.\n";
     }
-    cout << "Loaded " << i << "/36148 = " << i / 361.48 << "%.\n";
+    cout << "Load_Dates_from_DR: Loaded " << i << "/~36150 = " << i / 361.48 << "%.\n";
     return Dates;
 }
 Matrix Load_DR_Compressed(const string& fn, int max)
@@ -245,7 +245,7 @@ Matrix Load_DR_Compressed(const string& fn, int max)
 Intrix Load_Intrix(const string& fn, int max)
 {
     ifstream fil(fn);
-    if(!fil) {  cout << "Load_Intrix: Could not read the file " << fn << ".";  return Intrix(0);   }
+    if(!fil) {  cout << "Load_Intrix: Could not read the file " << fn << ".\n";  return Intrix(0);   }
 
     if(max < 1) max = 999999;
 
