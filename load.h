@@ -9,8 +9,6 @@ using Intrix = vector<vector<int>>;
 using Vector = vector<double>;
 using Matrix = vector<vector<double>>;
 
-#define BACHELOR_LOAD_H
-
 void HowToGetStarted()
 {
     mkdir("Data");
@@ -42,7 +40,7 @@ Matrix Load_Matrix(const string& fn)
 {
     //Forbind til fil
     ifstream fil(fn);
-    if(!fil)    { cout << "Filåbning mislykkedes."; return Matrix(0);   }
+    if(!fil)    { cout << "Load_Matrix: Åbning af filen " << fn << " mislykkedes.\n" ; return Matrix(0);   }
 
     //Lav matrix struktur
     size_t m,n;

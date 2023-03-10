@@ -9,7 +9,6 @@ using Vector = vector<double>;
 using Matrix = vector<vector<double>>;
 
 #pragma once
-#define BACHELOR_TESTING_H
 #include "load.h"
 
 int Find_date_integer(int date, Intor& Date_list);
@@ -185,4 +184,17 @@ void TestCalculations(string folderName, int max, double max_ratio, int minTradi
         Save_Vector(periodDirName + "/akk_sp500.txt", akk_sp500[i]);
         Save_Vector(periodDirName + "/akk_riskFree.txt", akk_riskFree[i]);
     }
+}
+vector<vector<Matrix>> Load_Double_Data(string runName)
+{
+    vector<vector<Matrix>> Data;
+    string dirPath = "Data/Output/Double/" + runName;
+
+    for (int Era = 0; Era < numFilesInDir(dirPath); ++Era)
+    {
+        for (int prePost = 0; prePost < 2; ++prePost) {
+
+        }
+    }
+    return Data;
 }

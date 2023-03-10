@@ -11,8 +11,7 @@ using Vector = vector<double>;
 using Matrix = vector<vector<double>>;
 
 
-#define BACHELOR_UI_H
-void Print_Matrix(Matrix A)
+void Print(Matrix A)
 {
     int m, n;
     m=A.size();
@@ -55,13 +54,13 @@ void Matrix_overview(Matrix DR)
     }
     //cout << DR[1][DR[1].size()-1];
 }
-void Print_Vector(Vector v)
+void Print(Vector v)
 {
     int m=v.size();
     for(int i=0; i<m; i++)  cout << "[" << setw(12) << v[i] << "  ]" << endl;
     cout << endl;
 }
-void Print_Intor(Intor v)
+void Print(Intor v)
 {
     int m=v.size();
     for(int i=0; i<m; i++)  cout << "[" << setw(12) << v[i] << "  ]" << endl;

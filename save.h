@@ -16,7 +16,7 @@ using Matrix = vector<vector<double>>;
 void Save_Vector(const string& fn, const Vector& v)
 {
     ofstream fil(fn);
-    if(!fil)    { cout << "Filåbning mislykkedes."; return;   }
+    if(!fil)    { cout << "Save_Vector: Åbning af filen " << fn << " mislykkedes.\n" ; return;   }
     cout << fixed << setprecision(15);
     for(double e : v)   fil << e << endl;
 }

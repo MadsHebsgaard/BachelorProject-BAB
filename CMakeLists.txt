@@ -3,4 +3,4 @@ project(Bachelor)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_executable(Bachelor main.cpp load.h save.h ui.h calculations.h testing.h)
+add_executable(Bachelor main.cpp load.h save.h ui.h calculations.h testing.h createData.h)
