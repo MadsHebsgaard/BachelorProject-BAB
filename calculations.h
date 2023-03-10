@@ -13,6 +13,9 @@ using Matrix = vector<vector<double>>;
 #pragma once
 #define BACHELOR_CALCULATIONS_H
 
+void push_back(vector<Matrix>& First, const vector<Matrix>& Second);
+void push_back(Matrix& First, const Matrix& Second);
+
 double Calculate_stockBeta(Vector stock, const Vector& sp500, int iStart, int iEnd, int iStart_DR);      //TODO
 pair<double,double> Calculate_Return(Vector stock, int iLength, int iStart_DR);             //TODO
 double CovSP500(Vector Stock, Vector sp500, int iStart_sp500, int iEnd_sp500, int iStart_DR);   //TODO: Fix start date and end date
@@ -22,7 +25,7 @@ Intor Column_of_Intrix(Intrix A, int n);
 int Find_date_integer(int date, Intor& Date_list);
 double Vector_Average(const Vector& v);
 Vector Matrix_Column(Matrix A, int j);
-
+void Save_Vector(const string& fn, const Vector& v);
 
 double Calculate_stockBeta(Vector stock, const Vector& sp500, int iStart, int iEnd, int iStart_DR)
 {
@@ -278,7 +281,7 @@ double Calculate_StockAlpha(double stockBeta, double stock_Return_akk, double sp
 
     return alpha;
 }
-vector<Intrix> convertToThreeDimVec(const Intrix& iPeriods, int x, bool rest_in_first_period)
+vector<Intrix> SplitPeriods(const Intrix& iPeriods, int x, bool rest_in_first_period)
 {
     int numRowsPerVec = floor(iPeriods.size() / x);
     int rest = iPeriods.size() - x * numRowsPerVec;
@@ -313,18 +316,18 @@ vector<Intrix> convertToThreeDimVec(const Intrix& iPeriods, int x, bool rest_in_
     if(rest > 0)
     {
         if(rest_in_first_period)
-            cout << ", last period have " << numRowsPerVec+rest << "periods.";
+            cout << ", last period have " << numRowsPerVec+rest << " periods.\n";
         else
-            cout << ", last period also have " << numRowsPerVec << "periods, so " << rest << " yeas was not included in any period.";
+            cout << ", last period also have " << numRowsPerVec << " periods, so " << rest << " yeas was not included in any period.\n";
     }
     else
-        cout << ".";
+        cout << ".\n";
 
     return threeDimVec;
 }
 Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const Vector& riskFree, const Intor& Dates, const Intor& iPeriod, int minTradingDaysBeforePeriod)
 {
-    Vector cov(0), sp500_Var(0), beta(0), stock_return_akk(0), sp500_return_akk(0), alpha(0), PERMNO(0), riskFree_Return_akk;
+    Vector beta(0), stock_return_akk(0), sp500_return_akk(0), alpha(0), PERMNO(0), riskFree_Return_akk;
     int iStart_sp500, iEnd_sp500, iStart_DR, iLength, Active_days;
     double stockBeta, stockAlpha, sp500_Return_akk, stock_Return_akk, RiskFree_Return_akk, Active_years;
     Vector akk_stock_sp500_RiskFree_Return;
@@ -349,8 +352,8 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const
         //Yderligere krav om at aktien ikke dør indenfor meget få dage //TODO: skaber bias, skal helst fjernes/mindskes på sigt
         if((Active_days) < 10) continue;
 
-        //Calculate beta
-        stockBeta = Calculate_stockBeta(DR[i], sp500, iStart_sp500, iEnd_sp500, iStart_DR);
+        //Calculate beta    //Starts minTradingDaysBeforePeriod before period
+        stockBeta = Calculate_stockBeta(DR[i], sp500, iStart_sp500-minTradingDaysBeforePeriod, iEnd_sp500, iStart_DR-minTradingDaysBeforePeriod);
 
         //Calculate akk. returns
         akk_stock_sp500_RiskFree_Return = Calculate_akk_Return(DR[i], sp500, riskFree, iLength, iStart_DR, iStart_sp500);
@@ -390,4 +393,96 @@ bool areFilesExistInDirectory(const std::vector<std::string>& filenames, const s
     }
     if(allExist)    return true;
     else            return false;
+}
+void synchronousCalculations(string folderName, double max_ratio, int minTradingDays, int n_periods, Matrix DR)
+{
+    string Exo_FilePath = "Data/Input/Exo_Files/";
+    string Proccessed_FilePath = "Data/Input/Processed_Files/";
+
+    //DR with condition for inclusion
+    Matrix DR_ny = Edit_DR(DR,max_ratio,minTradingDays);
+
+    //iDates with same stocks as DR_ny
+    Intrix iDates = Load_Intrix(Proccessed_FilePath+"DR_iDates.txt", -1);
+    iDates = Remove_Missing_ID_Intrix(iDates, Matrix_Column(DR_ny, 0));
+
+    //Load sp500 and riskFree returns & SP500 dates
+    Vector sp500 = Load_Vector(Exo_FilePath+"sp500.txt");
+    Vector riskFree = Load_Vector(Proccessed_FilePath+"riskFreeReturn.txt");
+    Intor Dates = Load_Intor(Exo_FilePath+"DateList.txt");
+
+    cout << "Files was Loaded.\n\n";
+
+    Matrix beta(n_periods,Vector(0)), alpha(n_periods,Vector(0)), PERMNO(n_periods,Vector(0));
+    Matrix akk_return(n_periods,Vector(0)), akk_sp500(n_periods,Vector(0)), akk_riskFree(n_periods,Vector(0));
+    Matrix beta_alpha_return;
+
+    Intrix iPeriods = Load_Intrix(Proccessed_FilePath+"iPeriods.txt", -1);
+    vector<Intrix> Era_List = SplitPeriods(iPeriods, n_periods, true);
+
+    vector<Matrix> DataSet(Era_List.size());
+
+    mkdir("Data/Output");
+    mkdir("Data/Output/Single");
+    folderName = "Data/Output/Single/" + folderName;
+    mkdir(folderName.c_str());
+    for (int i = 0; i < Era_List.size(); ++i)
+    {
+        //Vector beta(0), alpha(0), PERMNO(0), akk_return(0), akk_sp500(0), akk_riskFree(0);    //TODO: make it vectors
+
+        for (auto & iPeriod : Era_List[i])
+        {
+            //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
+            beta_alpha_return = Beta_Alpha_Calculate(DR_ny, iDates, sp500, riskFree, Dates, iPeriod, 130);
+            push_back(DataSet[i], beta_alpha_return);
+        }
+        // Creating a directory for the Era and each file in Era
+        string dirName = folderName + "/Era";
+        string periodDirName = dirName + "_" + to_string(i + 1);
+        mkdir(periodDirName.c_str());
+        vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
+        for (int file = 0; file < 6; ++file)    Save_Vector(periodDirName + fileNames[file], DataSet[i][file]);
+    }
+}
+void push_back(Matrix& First, const Matrix& Second)
+{
+    if (First.size()==0) {
+        First = Second;    return;
+    }
+
+    if(First.size()!=Second.size())
+    {
+        cout << "Push_back: Matrices have different number of rows\n";
+        return;
+    }
+    double n_first;
+    for (int i = 0; i < Second.size(); ++i) {
+        n_first = First[i].size();
+        First[i].resize(First[i].size() + Second[i].size());
+        for (int j = 0; j < Second[i].size(); ++j)
+            First[i][j + n_first] = Second[i][j];
+    }
+    return;
+}
+void push_back(vector<Matrix>& First, const vector<Matrix>& Second)
+{
+    if (First[0].size()==0) {
+        First = Second;    return;
+    }
+
+    if(First[0].size()!=Second[0].size())
+    {
+        cout << "Push_back: Matrices have different number of rows\n";
+        return;
+    }
+    double n_first;
+    for (int k = 0; k < 2; ++k) {
+        for (int i = 0; i < Second[k].size(); ++i) {
+            n_first = First[k][i].size();
+            First[k][i].resize(First[k][i].size() + Second[k][i].size());
+            for (int j = 0; j < Second[k][i].size(); ++j)
+                First[k][i][j + n_first] = Second[k][i][j];
+        }
+    }
+    return;
 }

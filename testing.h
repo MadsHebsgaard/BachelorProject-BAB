@@ -153,7 +153,7 @@ void TestCalculations(string folderName, int max, double max_ratio, int minTradi
     Matrix beta_alpha_return;
 
     Intrix iPeriods = Load_Intrix("Yearly_iPeriods.txt", -1);
-    vector<Intrix> Era_List = convertToThreeDimVec(iPeriods, n_periods, true);
+    vector<Intrix> Era_List = SplitPeriods(iPeriods, n_periods, true);
 
     folderName = "Output_Data/" + folderName;
     mkdir(folderName.c_str());
