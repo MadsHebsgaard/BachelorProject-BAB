@@ -69,7 +69,7 @@ double CovSP500(Vector Stock, Vector sp500, int iStart_sp500, int iEnd_sp500, in
     //CovSP500
     for (int i = 0; i < d_iDates; i++)
     {
-        if(Stock[i] != -2)
+        if(Stock[i+iStart_DR] != -2)
             Covv += (Stock[i+iStart_DR] - Mean_Stock) * (sp500[i + iStart_sp500] - Mean_sp500);
     }
     return Covv /(trading_Days - 1);
@@ -331,6 +331,7 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const
     double stockBeta, stockAlpha, sp500_Return_akk, stock_Return_akk, RiskFree_Return_akk, Active_years;
     Vector akk_stock_sp500_RiskFree_Return;
     int emptyCount;
+    int Active_TradingDaysBeforePeriod;
 
     for (int i = 0; i < DR.size(); ++i)
     {
@@ -343,13 +344,26 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const
         iEnd_sp500 = min(iDates[i][2], iPeriod[1]);        //sp500 end index
         iLength = iEnd_sp500 - iStart_sp500 + 1;           //iDates total
 
+        if(iLength <= 0) continue;
+
         //Dage og år aktien er aktiv (har returns != -2)
-        emptyCount=0;   if(iLength > 0) for(int j = iStart_DR; j < iStart_DR+iLength; ++j)  if(DR[i][j] == -2)  emptyCount++;
+        emptyCount=0;
+        for(int j = iStart_DR; j < iStart_DR+iLength; ++j)
+            if(DR[i][j] == -2)
+                emptyCount++;
         Active_days = iLength - emptyCount;
         Active_years = (DaysBetween(Dates[iStart_sp500], Dates[iStart_sp500+Active_days]) + 0.0) / 365.24;
 
-        //Yderligere krav om at aktien ikke dør indenfor meget få dage //TODO: skaber bias, skal helst fjernes/mindskes på sigt
-        if((Active_days) < 10) continue;
+        if(Active_days < 1) continue;
+
+        //Active_TradingDaysBeforePeriod
+        Active_TradingDaysBeforePeriod=0;
+        for(int j = iStart_DR-minTradingDaysBeforePeriod; j < iStart_DR; ++j)
+            if(DR[i][j] > -1.5 && DR[i][j] != 0)
+                Active_TradingDaysBeforePeriod++;
+
+        //Yderligere krav om at aktien er blevet handlet før tid
+        if(1+Active_TradingDaysBeforePeriod < minTradingDaysBeforePeriod/3.0) continue;
 
         //Calculate beta    //Starts minTradingDaysBeforePeriod before period
         stockBeta = Calculate_stockBeta(DR[i], sp500, iStart_sp500-minTradingDaysBeforePeriod, iEnd_sp500, iStart_DR-minTradingDaysBeforePeriod);
@@ -484,4 +498,15 @@ int numFilesInDir(string dirPath)
         }
     }
 return num_files;
+}
+int numSubdirsInDir(string dirPath)
+{
+    const std::filesystem::path dir_path = dirPath;
+    int num_subdirs = 0;
+    for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
+        if (entry.is_directory() && entry.path().filename().string()[0] != '.') {
+            ++num_subdirs;
+        }
+    }
+    return num_subdirs;
 }

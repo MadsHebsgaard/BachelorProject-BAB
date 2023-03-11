@@ -76,7 +76,7 @@ void Compress_DR_StockDays(const string& fn, Intrix StockDays)
 void Process_Files() {
     string Exo_FilePath = "Data/Input/Exo_Files/";
     string Proccessed_FilePath = "Data/Input/Processed_Files/";
-    const std::vector<std::string> filenames = {"sp500.txt", "DR_No_Ticker.txt", "DateList.txt", "DailyYearlyRiskFreeReturn.txt"};
+    const std::vector<std::string> filenames = {"sp500.txt", "DR.txt", "DateList.txt", "DailyYearlyRiskFreeReturn.txt"};
 
     if (areFilesExistInDirectory(filenames, Exo_FilePath))
     {
@@ -85,12 +85,12 @@ void Process_Files() {
         int max = 99999999;
 
         //Daily Return on each stock compressed
-        Matrix DR = Load_DR(Exo_FilePath + "DR_No_Ticker.txt", max);  //TODO: uncomment
+        Matrix DR = Load_DR(Exo_FilePath + "DR.txt", max);  //TODO: uncomment
         Compress_DR(Proccessed_FilePath + "DR_Compressed.txt", DR);   //TODO: uncomment
         cout << "Created " << Proccessed_FilePath << "DR_Compressed.txt\n";
 
         //Each Stock's lifespan
-        Intrix DR_Dates = Load_Dates_from_DR(Exo_FilePath + "DR_No_Ticker.txt");
+        Intrix DR_Dates = Load_Dates_from_DR(Exo_FilePath + "DR.txt");
         Save_Intrix(Proccessed_FilePath + "DR_Dates.txt", DR_Dates);
         cout << "Created " << Proccessed_FilePath << "DR_Dates.txt\n";
         //Intrix DR_Dates = Load_Intrix(Proccessed_FilePath+"DR_Dates.txt",-1); //if DR_Dates already exists
@@ -113,9 +113,15 @@ void Process_Files() {
         cout << "Created " << Proccessed_FilePath << "riskFreeReturn.txt\n";
 
         //Other files, usefull for testing
-        //Intrix StockDays = Load_StockDays_from_DR("DR_No_Ticker.txt", max);
+        //Intrix StockDays = Load_StockDays_from_DR("DR.txt", max);
         //Compress_DR_StockDays("DR_StockDays.txt", StockDays);    } else {
     }
     else
         HowToGetStarted();
+}
+void LogFile(string filePath, vector<string> Message)
+{
+    ofstream fil(filePath + "/LogFile.txt");
+    for(auto& line:Message)
+        fil << line << endl;
 }

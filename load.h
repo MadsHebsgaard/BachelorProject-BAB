@@ -16,13 +16,32 @@ void HowToGetStarted()
     string exoDirName = "Data/Input/Exo_Files";
     mkdir(exoDirName.c_str());
     cout << "\nYou need to put the following files in the folder \"" << exoDirName << "\":" << endl;
-    cout << "   - " << "DR_No_Ticker\n";
+    cout << "   - " << "DR\n";
     cout << "   - " << "DailyYearlyRiskFreeReturn\n";
     cout << "   - " << "sp500\n";
     cout << "   - " << "DateList\n";
 
     cout << "When all the files are present, Run \"Process_Files()\"." << endl << endl;
 }
+vector<Matrix> Load_Era_PrePost(string runName, int Era_nr)
+{
+    string dirPath = "Data/Output/Double/" + runName + "/Era_"+to_string(Era_nr);
+    vector<string> periodFolders = {dirPath+"/Pre_Period", dirPath+"/Period"};
+    vector<string> fileNames = {"/PERMNO.txt", "/beta.txt", "/alpha.txt", "/akk_return.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
+    vector<Matrix> Data(2, Matrix(fileNames.size(),Vector(0)));
+    double number = 1;
+
+    for (int prePost = 0; prePost < 2; ++prePost) {
+        for (int fileNr = 0; fileNr < fileNames.size(); ++fileNr) {
+            ifstream fil(periodFolders[prePost]+fileNames[fileNr]);
+            while(fil >> number) {
+                Data[prePost][fileNr].push_back(number);
+            }
+        }
+    }
+    return Data;
+}
+
 Vector Load_Vector(const string& fn)
 {
     ifstream fil(fn);
@@ -189,7 +208,7 @@ Intrix Load_Dates_from_DR(const string& fn)
     fil >> junk;
     fil >> junk;
     fil >> IDnew;
-    cout << "Load_Dates_from_DR: Loaded 0/~36150 = 0%.\n";
+    cout << "Load_Dates_from_DR: Loaded 0/~37000 = 0%.\n";
 
     while(!fil.eof())
     {
@@ -208,9 +227,9 @@ Intrix Load_Dates_from_DR(const string& fn)
         Stock.push_back(date);
         Dates.push_back(Stock);
         i++;
-        if(i % 500 == 0) cout << "Load_Dates_from_DR: Loaded " << i << "/~36150 = " << i/361.48 << "%.\n";
+        if(i % 500 == 0) cout << "Load_Dates_from_DR: Loaded " << i << "/~36150 = " << i/370 << "%.\n";
     }
-    cout << "Load_Dates_from_DR: Loaded " << i << "/~36150 = " << i / 361.48 << "%.\n";
+    cout << "Load_Dates_from_DR: Loaded " << i << "/~37000 = " << i / 370 << "%.\n";
     return Dates;
 }
 Matrix Load_DR_Compressed(const string& fn, int max)

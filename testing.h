@@ -185,16 +185,3 @@ void TestCalculations(string folderName, int max, double max_ratio, int minTradi
         Save_Vector(periodDirName + "/akk_riskFree.txt", akk_riskFree[i]);
     }
 }
-vector<vector<Matrix>> Load_Double_Data(string runName)
-{
-    vector<vector<Matrix>> Data;
-    string dirPath = "Data/Output/Double/" + runName;
-
-    for (int Era = 0; Era < numFilesInDir(dirPath); ++Era)
-    {
-        for (int prePost = 0; prePost < 2; ++prePost) {
-
-        }
-    }
-    return Data;
-}
