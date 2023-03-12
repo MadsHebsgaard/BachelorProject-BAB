@@ -2,6 +2,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include "calculations.h"
 
 using namespace std;
 using Intor = vector<int>;
@@ -15,31 +16,13 @@ void HowToGetStarted()
     mkdir("Data/Input");
     string exoDirName = "Data/Input/Exo_Files";
     mkdir(exoDirName.c_str());
-    cout << "\nYou need to put the following files in the folder \"" << exoDirName << "\":" << endl;
+    cout << "\nYou need to put the following .txt files in the folder \"" << exoDirName << "\":" << endl;
     cout << "   - " << "DR\n";
     cout << "   - " << "DailyYearlyRiskFreeReturn\n";
     cout << "   - " << "sp500\n";
     cout << "   - " << "DateList\n";
 
     cout << "When all the files are present, Run \"Process_Files()\"." << endl << endl;
-}
-vector<Matrix> Load_Era_PrePost(string runName, int Era_nr)
-{
-    string dirPath = "Data/Output/Double/" + runName + "/Era_"+to_string(Era_nr);
-    vector<string> periodFolders = {dirPath+"/Pre_Period", dirPath+"/Period"};
-    vector<string> fileNames = {"/PERMNO.txt", "/beta.txt", "/alpha.txt", "/akk_return.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
-    vector<Matrix> Data(2, Matrix(fileNames.size(),Vector(0)));
-    double number = 1;
-
-    for (int prePost = 0; prePost < 2; ++prePost) {
-        for (int fileNr = 0; fileNr < fileNames.size(); ++fileNr) {
-            ifstream fil(periodFolders[prePost]+fileNames[fileNr]);
-            while(fil >> number) {
-                Data[prePost][fileNr].push_back(number);
-            }
-        }
-    }
-    return Data;
 }
 
 Vector Load_Vector(const string& fn)
@@ -240,8 +223,7 @@ Matrix Load_DR_Compressed(const string& fn, int max)
     Vector Stock;
     Matrix DR;
 
-    Stock.reserve(100000);
-    DR.reserve(37000);
+    DR.reserve(40000);
     int n, i=0;
 
     while(fil >> n)

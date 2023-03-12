@@ -1,8 +1,8 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include "load.h"
 #include <filesystem> // Requires C++17 or later //Might introduce problems for some computers
+#include "load.h"
 
 using namespace std;
 using Intor = vector<int>;
@@ -11,6 +11,7 @@ using Vector = vector<double>;
 using Matrix = vector<vector<double>>;
 
 #pragma once
+
 
 void push_back(vector<Matrix>& First, const vector<Matrix>& Second);
 void push_back(Matrix& First, const Matrix& Second);
@@ -25,6 +26,7 @@ int Find_date_integer(int date, Intor& Date_list);
 double Vector_Average(const Vector& v);
 Vector Matrix_Column(Matrix A, int j);
 void Save_Vector(const string& fn, const Vector& v);
+Intor Load_Intor(const string& fn);
 
 double Calculate_stockBeta(Vector stock, const Vector& sp500, int iStart, int iEnd, int iStart_DR)
 {
@@ -191,7 +193,7 @@ Intrix Remove_Missing_ID_Intrix(Intrix A, Vector v)
 }
 Intrix dPeriods_From_iPeriod(Intrix iPeriod)
 {
-    Intor Dates = Load_Intor("SP_Dates.txt");
+    Intor Dates = Load_Intor("DateList.txt");
     for(int i =0; i<iPeriod.size(); i++)
     {
         iPeriod[i][0] = Dates[iPeriod[i][0]];
@@ -262,12 +264,9 @@ int DaysBetween(int iDate_from, int iDate_to) {
 double Calculate_StockAlpha(double stockBeta, double stock_Return_akk, double sp500_Return_akk, double RiskFree_Return_akk, double Active_years)
 {
     //TODO: Tilbagediskunter med risikofrie rente?
-    double alpha;
     double stock_avg_Return = pow(1 + RiskFree_Return_akk, Active_years) - 1;
     double sp500_avg_Return = pow(1 + sp500_Return_akk, 1/Active_years) - 1;
     double riskFree_avg_Return = pow(1 + RiskFree_Return_akk, 1/Active_years) - 1;
-
-    alpha = stock_Return_akk - (stockBeta * (sp500_Return_akk - RiskFree_Return_akk) + RiskFree_Return_akk);
 
     /*//Old way
     double SML = stockBeta * (sp500_avg_Return - riskFree_avg_Return) + riskFree_avg_Return;
@@ -278,7 +277,7 @@ double Calculate_StockAlpha(double stockBeta, double stock_Return_akk, double sp
 
     //stockAlpha = stock_avg_Return - (stockBeta * (sp500_avg_Return - riskFree_avg_Return) + riskFree_avg_Return);
 
-    return alpha;
+    return stock_Return_akk - (RiskFree_Return_akk + stockBeta * (sp500_Return_akk - RiskFree_Return_akk));
 }
 vector<Intrix> SplitPeriods(const Intrix& iPeriods, int x, bool rest_in_first_period)
 {
@@ -315,9 +314,9 @@ vector<Intrix> SplitPeriods(const Intrix& iPeriods, int x, bool rest_in_first_pe
     if(rest > 0)
     {
         if(rest_in_first_period)
-            cout << ", last period have " << numRowsPerVec+rest << " periods.\n";
+            cout << ", first period have " << numRowsPerVec+rest << " periods.\n";
         else
-            cout << ", last period also have " << numRowsPerVec << " periods, so " << rest << " yeas was not included in any period.\n";
+            cout << ", first period also have " << numRowsPerVec << " periods, so " << rest << " yeas was not included in any period.\n";
     }
     else
         cout << ".\n";
@@ -326,12 +325,14 @@ vector<Intrix> SplitPeriods(const Intrix& iPeriods, int x, bool rest_in_first_pe
 }
 Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const Vector& riskFree, const Intor& Dates, const Intor& iPeriod, int minTradingDaysBeforePeriod)
 {
-    Vector beta(0), stock_return_akk(0), sp500_return_akk(0), alpha(0), PERMNO(0), riskFree_Return_akk;
+    Vector beta(0), stock_return_akk(0), sp500_return_akk(0), alpha(0), PERMNO(0), riskFree_Return_akk(0);
     int iStart_sp500, iEnd_sp500, iStart_DR, iLength, Active_days;
     double stockBeta, stockAlpha, sp500_Return_akk, stock_Return_akk, RiskFree_Return_akk, Active_years;
     Vector akk_stock_sp500_RiskFree_Return;
     int emptyCount;
     int Active_TradingDaysBeforePeriod;
+
+    beta.reserve(DR.size()); alpha.reserve(DR.size()); stock_return_akk.reserve(DR.size()); PERMNO.reserve(DR.size()); sp500_return_akk.reserve(DR.size()); riskFree_Return_akk.reserve(DR.size());
 
     for (int i = 0; i < DR.size(); ++i)
     {
@@ -344,16 +345,12 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const
         iEnd_sp500 = min(iDates[i][2], iPeriod[1]);        //sp500 end index
         iLength = iEnd_sp500 - iStart_sp500 + 1;           //iDates total
 
-        if(iLength <= 0) continue;
-
         //Dage og år aktien er aktiv (har returns != -2)
         emptyCount=0;
         for(int j = iStart_DR; j < iStart_DR+iLength; ++j)
             if(DR[i][j] == -2)
                 emptyCount++;
         Active_days = iLength - emptyCount;
-        Active_years = (DaysBetween(Dates[iStart_sp500], Dates[iStart_sp500+Active_days]) + 0.0) / 365.24;
-
         if(Active_days < 1) continue;
 
         //Active_TradingDaysBeforePeriod
@@ -375,6 +372,7 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const
         RiskFree_Return_akk = akk_stock_sp500_RiskFree_Return[2];
 
         //Calculate alpha
+        Active_years = 0; //Active_years = (DaysBetween(Dates[iStart_sp500], Dates[iStart_sp500+Active_days]) + 0.0) / 365.24;
         stockAlpha = Calculate_StockAlpha(stockBeta, stock_Return_akk, sp500_Return_akk, RiskFree_Return_akk, Active_years);
 
         //Save data to vectors
