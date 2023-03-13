@@ -452,19 +452,19 @@ vector<Matrix> Overlapping_ID_Matrix_Array(Matrix A, Matrix B, int ID_row)
 {
     //Finding maching indexes
     Intor A_Keep(0), B_Keep(0);
-    int j = 0;
-    for (int i = 0; i < A[0].size(); ++i)
+    int b = 0;
+    for (int a = 0; a < A[0].size(); ++a)
     {
-        while(A[ID_row][i] > B[ID_row][j])
+        while(A[ID_row][a] > B[ID_row][b])
         {
-            j++;
-            if(j>=B.size()) break;
+            b++;
+            if(b >= B[ID_row].size()) break;
         }
-        if(A[ID_row][i] == B[ID_row][j])
+        if(A[ID_row][a] == B[ID_row][b])
         {
-            A_Keep.push_back(i);
-            B_Keep.push_back(j);
-            j++;
+            A_Keep.push_back(a);
+            B_Keep.push_back(b);
+            b++;
         }
     }
     //Keep only maching indexes
@@ -508,3 +508,4 @@ int numSubdirsInDir(string dirPath)
     }
     return num_subdirs;
 }
+

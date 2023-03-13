@@ -12,6 +12,9 @@ using Intor = vector<int>;
 using Intrix = vector<vector<int>>;
 using Vector = vector<double>;
 using Matrix = vector<vector<double>>;
+using Tensor3 = vector<Matrix>;
+using Tensor4 = vector<Tensor3>;
+using Tensor5 = vector<Tensor4>;
 
 
 #pragma once
@@ -43,6 +46,7 @@ void Era_PrePost_Calculations(string folderName, double max_ratio, int minTradin
     mkdir("Data/Output");
     mkdir("Data/Output/Era_PrePost");
     folderName = "Data/Output/Era_PrePost/" + folderName;
+    std::filesystem::remove_all(folderName.c_str());
     mkdir(folderName.c_str());
     vector<Matrix> twoPeriod_Data;
 
@@ -114,8 +118,10 @@ void Era_Calculations(string folderName, double max_ratio, int minTradingDays, i
     mkdir("Data/Output");
     mkdir("Data/Output/Era");
     folderName = "Data/Output/Era/" + folderName;
-    string dirName = folderName + "/Era";
+    std::filesystem::remove_all(folderName.c_str());
     mkdir(folderName.c_str());
+
+    string dirName = folderName + "/Era";
     vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
 
     for (int i = 0; i < Era_List.size(); ++i)
@@ -158,7 +164,9 @@ void Period_Calculations(string folderName, double max_ratio, int minTradingDays
     mkdir("Data/Output");
     mkdir("Data/Output/Period");
     folderName = "Data/Output/Period/" + folderName;
+    std::filesystem::remove_all(folderName.c_str());
     mkdir(folderName.c_str());
+
     string dirName = folderName + "/Period";
     vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
     Matrix Data;
@@ -203,6 +211,8 @@ void Era_Period_PrePost_Calculations(string folderName, double max_ratio, int mi
     mkdir("Data/Output");
     mkdir("Data/Output/Era_Period_PrePost");
     folderName = "Data/Output/Era_Period_PrePost/" + folderName;
+
+    std::filesystem::remove_all(folderName.c_str());
     mkdir(folderName.c_str());
     vector<Matrix> twoPeriod_Data;
     vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
@@ -218,12 +228,19 @@ void Era_Period_PrePost_Calculations(string folderName, double max_ratio, int mi
         string dirName = folderName + "/Era" + "_" + to_string(Era + 1);
         mkdir(dirName.c_str());
 
-        if(Era < rest)  eraLength = minEraLength+1;
-        else            eraLength = minEraLength;
+        if(rest <= n_Eras){
+            if(Era < rest)  eraLength = minEraLength+1;
+            else            eraLength = minEraLength;
+        }
+        else if(Era == 0)   eraLength = minEraLength+rest;
 
         Matrix beta(2,Vector(0)), alpha(2,Vector(0)), PERMNO(2,Vector(0)), akk_return(2,Vector(0)), akk_sp500(2,Vector(0)), akk_riskFree(2,Vector(0));
         for (int eraPeriod = 1; eraPeriod <= eraLength; eraPeriod++)
         {
+            if(eraPeriod==61)
+            {
+                cout << "her";
+            }
             //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
             twoPeriod_Data = TwoPeriod_Calc(DR_ny, iDates, sp500, riskFree, Dates, iPeriods[periodNr -1], iPeriods[periodNr]);
 
@@ -271,6 +288,7 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
     mkdir("Data/Output");
     mkdir("Data/Output/Era_PrePost_Period");
     folderName = "Data/Output/Era_PrePost_Period/" + folderName;
+    std::filesystem::remove_all(folderName.c_str());
     mkdir(folderName.c_str());
     vector<Matrix> twoPeriod_Data;
     vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
@@ -316,4 +334,97 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
         }
     }
     LogFile(folderName, logMessage);    //Add more information to logMessage
+}
+
+void BackTesting(Tensor5 Data, int eraNr)
+{
+
+
+    //vector<Matrix> Low_Portfolio(Data[eraNr][0].size(), Matrix(stockInf, Vector(0)));
+    //vector<Matrix> High_Portfolio(Data[eraNr][0].size(), Matrix(stockInf, Vector(0)));
+
+    //Creating the portfolio with all the stocks
+    //for (int eraNr = 0; eraNr < Data.size(); ++eraNr) {
+    /*for (int periodNr = 0; periodNr < Data[eraNr][0].size(); ++periodNr) {
+        for (int stockNr = 0; stockNr < Data[eraNr][0][periodNr][0].size(); ++stockNr) {
+
+            //Low beta portefolio
+            if(Data[eraNr][0][periodNr][0][stockNr] < betaLow)
+            {
+                for (int inform = 0; inform < stockInf; ++inform)
+                    Low_Portfolio[periodNr][inform].push_back(Data[eraNr][1][periodNr][inform][stockNr]);
+            }
+            //High beta portefolio
+            else if(Data[eraNr][0][periodNr][0][stockNr] > betaLow)
+            {
+                for (int inform = 0; inform < stockInf; ++inform)
+                    High_Portfolio[periodNr][inform].push_back(Data[eraNr][1][periodNr][inform][stockNr]);
+            }
+        }
+    }*/
+    //}
+
+    double betaLow = 0.5;
+    double betaHigh = 1.25;
+    int stockInf = Data[0][0][0].size(); //Permno is excluded
+    eraNr--;
+
+    int iBeta = 0;
+    int iReturn = 1;
+    int iAlpha = 2;
+    int iSP500 = 3;
+    int iRiskFree = 4;
+    int iCount = 5;
+    stockInf = Data[0][0][0].size()-1; //Permno is excluded
+
+    int periodCount = Data[eraNr].size();
+
+    Matrix lowPortfolio(periodCount, Vector(stockInf, 0));
+    Matrix highPortfolio(periodCount, Vector(stockInf, 0));
+    Matrix BAB(periodCount, Vector(stockInf, 0));
+
+    Matrix preBeta(periodCount, Vector(2,0));
+    Matrix Count(periodCount, Vector(2,0));
+
+    Vector BAB_Average(stockInf+1, 0);
+
+    //Creating the portfolio as if it was a stock (ETF)
+    for (int periodNr = 0; periodNr < periodCount; ++periodNr) {
+        for (int stockNr = 0; stockNr < Data[eraNr][periodNr][0][0].size(); ++stockNr) {
+
+            //Low beta portefolio
+            if(Data[eraNr][periodNr][0][0][stockNr] < betaLow)
+            {
+                preBeta[periodNr][0] += Data[eraNr][periodNr][0][0][stockNr];
+                Count[periodNr][0]++;
+                for (int inform = 0; inform < stockInf; ++inform) {
+                    lowPortfolio[periodNr][inform] += Data[eraNr][periodNr][1][inform][stockNr];
+                }
+            }
+                //High beta portefolio
+            else if(Data[eraNr][periodNr][0][0][stockNr] > betaLow)
+            {
+                preBeta[periodNr][1] += Data[eraNr][periodNr][0][0][stockNr];
+                Count[periodNr][1]++;
+                for (int inform = 0; inform < stockInf; ++inform) {
+                    highPortfolio[periodNr][inform] += Data[eraNr][periodNr][1][inform][stockNr];
+                }
+            }
+        }
+        preBeta[periodNr][0] /= Count[periodNr][0];
+        preBeta[periodNr][1] /= Count[periodNr][1];
+
+        for (int info = 0; info < stockInf; ++info) {
+            lowPortfolio[periodNr][info] /= Count[periodNr][0];     //Average
+            highPortfolio[periodNr][info] /= Count[periodNr][1];    //Average
+        }
+        double LowAmmount = preBeta[periodNr][1] / (preBeta[periodNr][0]+preBeta[periodNr][1]);
+        for (int info = 0; info < stockInf; ++info) {
+            BAB[periodNr][info] = LowAmmount * lowPortfolio[periodNr][info] - (1-LowAmmount) * highPortfolio[periodNr][info];
+            BAB_Average[info] += BAB[periodNr][info];
+        }
+        BAB_Average[iCount] += Count[periodNr][0] + Count[periodNr][1];
+    }
+    for (int info = 0; info < stockInf+1; ++info)   BAB_Average[info] /= periodCount;
+    return;
 }

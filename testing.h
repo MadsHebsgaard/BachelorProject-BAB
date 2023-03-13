@@ -185,3 +185,71 @@ void TestCalculations(string folderName, int max, double max_ratio, int minTradi
         Save_Vector(periodDirName + "/akk_riskFree.txt", akk_riskFree[i]);
     }
 }
+
+
+
+/*
+void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int minTradingDays, int n_Eras, Matrix DR)   //TODO: Make this
+{
+    vector<string> logMessage = {"max_ratio = "+to_string(max_ratio),"minTradingDays = "+to_string(minTradingDays)};
+    string Exo_FilePath = "Data/Input/Exo_Files/";
+    string Proccessed_FilePath = "Data/Input/Processed_Files/";
+
+    //DR with condition for inclusion
+    Matrix DR_ny = Edit_DR(DR,max_ratio,minTradingDays);
+
+    //iDates with same stocks as DR_ny
+    Intrix iDates = Load_Intrix(Proccessed_FilePath+"DR_iDates.txt", -1);
+    iDates = Remove_Missing_ID_Intrix(iDates, Matrix_Column(DR_ny, 0));
+
+    //Load sp500 and riskFree returns & SP500 dates
+    Vector sp500 = Load_Vector(Exo_FilePath+"sp500.txt");
+    Vector riskFree = Load_Vector(Proccessed_FilePath+"riskFreeReturn.txt");
+    Intor Dates = Load_Intor(Exo_FilePath+"DateList.txt");
+
+    //Load iPeriods and create Era_List
+    Intrix iPeriods = Load_Intrix(Proccessed_FilePath+"iPeriods.txt", -1);
+    vector<Intrix> Era_List = SplitPeriods(iPeriods, n_Eras, true);
+
+    cout << "Era_PrePost_Calculations: Files was Loaded for \"" << folderName << "\".\n\n";
+    mkdir("Data/Output");
+    mkdir("Data/Output/Era_PrePost_Period");
+    folderName = "Data/Output/Era_PrePost_Period/" + folderName;
+    mkdir(folderName.c_str());
+    vector<Matrix> twoPeriod_Data;
+    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
+
+    for (int Era = 0; Era < n_Eras; ++Era)
+    {
+        //Create directory and path for era + pre(period)
+        string dirName = folderName + "/Era" + "_" + to_string(Era + 1);
+        mkdir(dirName.c_str());
+        string preDirName = dirName + "/Pre_Period";
+        string postDirName = dirName + "/Period";
+        mkdir(preDirName.c_str());
+        mkdir(postDirName.c_str());
+
+        Matrix beta(2,Vector(0)), alpha(2,Vector(0)), PERMNO(2,Vector(0)), akk_return(2,Vector(0)), akk_sp500(2,Vector(0)), akk_riskFree(2,Vector(0));
+        for (int Period = 1; Period < Era_List[Era].size(); Period++)
+        {
+            //if(Era == 0 && Period == 0) continue;
+            //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
+            twoPeriod_Data = TwoPeriod_Calc(DR_ny, iDates, sp500, riskFree, Dates, Era_List[Era][Period-1], Era_List[Era][Period]);
+
+            //Create dirs and then files
+            string periodPre_DirName = preDirName + "/Period_" + to_string(Period);
+            string periodPost_DirName = postDirName + "/Period_" + to_string(Period);
+
+            mkdir(periodPre_DirName.c_str());
+            mkdir(periodPost_DirName.c_str());
+
+            vector<string> prePost {periodPre_DirName, periodPost_DirName};
+            for (int i = 0; i < prePost.size(); ++i) {
+                mkdir(prePost[i].c_str());
+                for (int file = 0; file < fileNames.size(); ++file)    Save_Vector(prePost[i] + fileNames[file], twoPeriod_Data[i][file]);
+            }
+        }
+    }
+    LogFile(folderName, logMessage);    //Add more information to logMessage
+}
+ */

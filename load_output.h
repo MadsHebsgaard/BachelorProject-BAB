@@ -56,7 +56,10 @@ vector<vector<Matrix>> Load_Era_n_PrePost_Period(string runName, int Era_nr)
 }
 vector<vector<vector<Matrix>>> Load_Era_PrePost_Period(string runName)
 {
-    vector<string> fileNames = {"/PERMNO.txt", "/beta.txt", "/alpha.txt", "/akk_return.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
+    //vector<string> fileNames = {"/beta.txt", "/akk_return.txt", "/alpha.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
+    vector<string> fileNames = {"/beta.txt", "/akk_return.txt", "/alpha.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/PERMNO.txt"};
+
+
     vector<string> prePostName = {"/Pre_Period", "/Period"};
     string eraPaths = "Data/Output/Era_PrePost_Period/" + runName;
     int Era_count = numSubdirsInDir(eraPaths);
@@ -90,7 +93,10 @@ vector<vector<vector<Matrix>>> Load_Era_PrePost_Period(string runName)
 }
 vector<vector<vector<Matrix>>> Load_Era_Period_PrePost(string runName)
 {
-    vector<string> fileNames = {"/PERMNO.txt", "/beta.txt", "/alpha.txt", "/akk_return.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
+
+    //vector<string> fileNames = {"/PERMNO.txt", "/beta.txt", "/alpha.txt", "/akk_return.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
+    vector<string> fileNames = {"/beta.txt", "/akk_return.txt", "/alpha.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/PERMNO.txt"};
+
     vector<string> prePostName = {"/Pre_Period", "/Period"};
     string eraPaths = "Data/Output/Era_Period_PrePost/" + runName;
     int Era_count = numSubdirsInDir(eraPaths);

@@ -32,33 +32,23 @@ using Tensor5 = vector<Tensor4>;
 
 //Tensor5 Data = Load_Era_PrePost_Period("run");
 //Tensor4 Data = Load_Era_n_PrePost_Period("run",1);
-
 //vector<Matrix> Data = Load_Era_PrePost("Test", 1);
+
+
 
 int main()
 {
-    //todo: ADD Era to Load Era PrePost
-    //todo: check how to make data creation fast again
-    //TODO: fix andre prePost Era
-
     //Process_Files();
-
     //Matrix DR = Load_DR_Compressed("Data/Input/Processed_Files/DR_Compressed.txt", -1);
-    //Era_Calculations("run", 0.3, 100, 1, DR);
-    //Period_Calculations("run", 0.3, 100, DR, 1);
+    //Era_Period_PrePost_Calculations("run", 0.3, 100, 1, DR);
+
+    //Era_Calculations("run_test60", 0.3, 100, 1, DR);
+    //Period_Calculations("run_test60", 0.3, 100, DR, 1);
     //Era_PrePost_Calculations("runtest", 0.3, 100, 5, DR);
     //Era_PrePost_Period_Calculations("run", 0.3, 100, 5, DR);
     //Tensor5 Data = Load_Era_PrePost_Period("run");
 
-    //Era_Period_PrePost_Calculations("run", 0.3, 100, 1, DR);
-    //Tensor5 Data = Load_Era_Period_PrePost("run");
 
-
-}
-void BackTesting(Tensor4 Data)
-{
-    //TODO: Era_Period_PrePost load data
-
-
-
+    Tensor5 Data = Load_Era_Period_PrePost("run");
+    BackTesting(Data, 1);
 }
