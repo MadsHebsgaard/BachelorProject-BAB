@@ -336,7 +336,7 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
     LogFile(folderName, logMessage);    //Add more information to logMessage
 }
 
-void BackTesting(Tensor5 Data, int eraNr)
+void BackTesting(Tensor5 Data)
 {
 
 
@@ -367,7 +367,6 @@ void BackTesting(Tensor5 Data, int eraNr)
     double betaLow = 0.5;
     double betaHigh = 1.25;
     int stockInf = Data[0][0][0].size(); //Permno is excluded
-    eraNr--;
 
     int iBeta = 0;
     int iReturn = 1;
@@ -376,55 +375,72 @@ void BackTesting(Tensor5 Data, int eraNr)
     int iRiskFree = 4;
     int iCount = 5;
     stockInf = Data[0][0][0].size()-1; //Permno is excluded
+    int eraCount = Data.size();
+    int maxPeriodCount = Data[0].size();
 
-    int periodCount = Data[eraNr].size();
+    //int periodCount = Data[eraNr].size() -1;    //TODO: Mangler 2022 sp500 data
+//TODO: Save to fork
 
-    Matrix lowPortfolio(periodCount, Vector(stockInf, 0));
-    Matrix highPortfolio(periodCount, Vector(stockInf, 0));
-    Matrix BAB(periodCount, Vector(stockInf, 0));
+    vector<Matrix> lowPortfolio(eraCount, Matrix (maxPeriodCount, Vector(stockInf, 0)));
+    vector<Matrix> highPortfolio(eraCount, Matrix (maxPeriodCount, Vector(stockInf, 0)));
+    vector<Matrix> BAB(eraCount, Matrix (maxPeriodCount, Vector(stockInf, 0)));
 
-    Matrix preBeta(periodCount, Vector(2,0));
-    Matrix Count(periodCount, Vector(2,0));
+    vector<Matrix> preBeta(Data.size(), Matrix (maxPeriodCount, Vector(2, 0)));
+    vector<Matrix> Count(Data.size(), Matrix (maxPeriodCount, Vector(2, 0)));
 
-    Vector BAB_Average(stockInf+1, 0);
+    Matrix BAB_Average(eraCount, Vector(stockInf+1, 0));
 
     //Creating the portfolio as if it was a stock (ETF)
-    for (int periodNr = 0; periodNr < periodCount; ++periodNr) {
-        for (int stockNr = 0; stockNr < Data[eraNr][periodNr][0][0].size(); ++stockNr) {
 
-            //Low beta portefolio
-            if(Data[eraNr][periodNr][0][0][stockNr] < betaLow)
-            {
-                preBeta[periodNr][0] += Data[eraNr][periodNr][0][0][stockNr];
-                Count[periodNr][0]++;
-                for (int inform = 0; inform < stockInf; ++inform) {
-                    lowPortfolio[periodNr][inform] += Data[eraNr][periodNr][1][inform][stockNr];
+    for (int eraNr = 0; eraNr < eraCount; ++eraNr) {
+        int periodCount = Data[eraNr].size()-1;
+        //TODO: Resize period ammount
+        for (int periodNr = 0; periodNr < periodCount; ++periodNr) {
+            for (int stockNr = 0; stockNr < Data[eraNr][periodNr][0][0].size(); ++stockNr) {
+
+                double hist_Beta = Data[eraNr][periodNr][0][0][stockNr];
+                //Low beta portefolio
+                if(hist_Beta < betaLow)
+                {
+                    double ammount = betaLow - hist_Beta;
+                    ammount = 1;    //ammount = 1 for equal weighted
+                    preBeta[eraNr][periodNr][0] += ammount * hist_Beta;
+                    Count[eraNr][periodNr][0] += ammount;
+                    for (int inform = 0; inform < stockInf; ++inform) {
+                        lowPortfolio[eraNr][periodNr][inform] += ammount * Data[eraNr][periodNr][1][inform][stockNr];
+                    }
+                }
+                    //High beta portefolio
+                else if(hist_Beta > betaLow)
+                {
+                    double ammount = hist_Beta - betaHigh;  //ammount = 1 for equal weighted
+                    ammount = 1;    //ammount = 1 for equal weighted
+                    preBeta[eraNr][periodNr][1] += ammount * hist_Beta;
+                    Count[eraNr][periodNr][1] += ammount;
+                    for (int inform = 0; inform < stockInf; ++inform) {
+                        highPortfolio[eraNr][periodNr][inform] += ammount * Data[eraNr][periodNr][1][inform][stockNr];
+                    }
                 }
             }
-                //High beta portefolio
-            else if(Data[eraNr][periodNr][0][0][stockNr] > betaLow)
-            {
-                preBeta[periodNr][1] += Data[eraNr][periodNr][0][0][stockNr];
-                Count[periodNr][1]++;
-                for (int inform = 0; inform < stockInf; ++inform) {
-                    highPortfolio[periodNr][inform] += Data[eraNr][periodNr][1][inform][stockNr];
-                }
-            }
-        }
-        preBeta[periodNr][0] /= Count[periodNr][0];
-        preBeta[periodNr][1] /= Count[periodNr][1];
+            preBeta[eraNr][periodNr][0] /= Count[eraNr][periodNr][0];
+            preBeta[eraNr][periodNr][1] /= Count[eraNr][periodNr][1];
 
-        for (int info = 0; info < stockInf; ++info) {
-            lowPortfolio[periodNr][info] /= Count[periodNr][0];     //Average
-            highPortfolio[periodNr][info] /= Count[periodNr][1];    //Average
+            for (int info = 0; info < stockInf; ++info) {
+                lowPortfolio[eraNr][periodNr][info] /= Count[eraNr][periodNr][0];     //Average
+                highPortfolio[eraNr][periodNr][info] /= Count[eraNr][periodNr][1];    //Average
+            }
+            //double LowAmmount = preBeta[periodNr][1] / (preBeta[periodNr][0]+preBeta[periodNr][1]);
+            double BhighLow = preBeta[eraNr][periodNr][1] - preBeta[eraNr][periodNr][0];
+            double lowAmmount = (0.2 + preBeta[eraNr][periodNr][1] / BhighLow);
+            double highAmmount = -(0.2 + preBeta[eraNr][periodNr][0] / BhighLow);
+
+            for (int info = 0; info < stockInf; ++info) {
+                BAB[eraNr][periodNr][info] = lowAmmount * lowPortfolio[eraNr][periodNr][info] + highAmmount * highPortfolio[eraNr][periodNr][info];
+                BAB_Average[eraNr][info] += BAB[eraNr][periodNr][info];
+            }
+            BAB_Average[eraNr][iCount] += Count[eraNr][periodNr][0] + Count[eraNr][periodNr][1];
         }
-        double LowAmmount = preBeta[periodNr][1] / (preBeta[periodNr][0]+preBeta[periodNr][1]);
-        for (int info = 0; info < stockInf; ++info) {
-            BAB[periodNr][info] = LowAmmount * lowPortfolio[periodNr][info] - (1-LowAmmount) * highPortfolio[periodNr][info];
-            BAB_Average[info] += BAB[periodNr][info];
-        }
-        BAB_Average[iCount] += Count[periodNr][0] + Count[periodNr][1];
+        for (int info = 0; info < stockInf+1; ++info)   BAB_Average[eraNr][info] /= periodCount;
     }
-    for (int info = 0; info < stockInf+1; ++info)   BAB_Average[info] /= periodCount;
     return;
 }

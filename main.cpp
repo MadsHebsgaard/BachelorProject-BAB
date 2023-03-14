@@ -38,6 +38,9 @@ using Tensor5 = vector<Tensor4>;
 
 int main()
 {
+
+    //TODO: Mangler sp500 2022 data
+
     //Process_Files();
     //Matrix DR = Load_DR_Compressed("Data/Input/Processed_Files/DR_Compressed.txt", -1);
     //Era_Period_PrePost_Calculations("run", 0.3, 100, 1, DR);
@@ -50,5 +53,5 @@ int main()
 
 
     Tensor5 Data = Load_Era_Period_PrePost("run");
-    BackTesting(Data, 1);
+    BackTesting(Data);
 }
