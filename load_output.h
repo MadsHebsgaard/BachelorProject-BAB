@@ -91,11 +91,10 @@ vector<vector<vector<Matrix>>> Load_Era_PrePost_Period(string runName)
     }
     return Data;
 }
-vector<vector<vector<Matrix>>> Load_Era_Period_PrePost(string runName)
+vector<vector<vector<Matrix>>> Load_Era_Period_PrePost(string runName, vector<string> fileNames)
 {
 
     //vector<string> fileNames = {"/PERMNO.txt", "/beta.txt", "/alpha.txt", "/akk_return.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
-    vector<string> fileNames = {"/beta.txt", "/akk_return.txt", "/alpha.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/PERMNO.txt"};
 
     vector<string> prePostName = {"/Pre_Period", "/Period"};
     string eraPaths = "Data/Output/Era_Period_PrePost/" + runName;

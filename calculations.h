@@ -25,7 +25,7 @@ Intor Column_of_Intrix(Intrix A, int n);
 int Find_date_integer(int date, Intor& Date_list);
 double Vector_Average(const Vector& v);
 Vector Matrix_Column(Matrix A, int j);
-void Save_Vector(const string& fn, const Vector& v);
+void Save(const string& fn, const Vector& v);
 Intor Load_Intor(const string& fn);
 
 double Calculate_stockBeta(Vector stock, const Vector& sp500, int iStart, int iEnd, int iStart_DR)

@@ -13,20 +13,20 @@ using Matrix = vector<vector<double>>;
 
 #include "calculations.h"
 
-void Save_Vector(const string& fn, const Vector& v)
+void Save(const string& fn, const Vector& v)
 {
     ofstream fil(fn);
-    if(!fil)    { cout << "Save_Vector: Åbning af filen " << fn << " mislykkedes.\n" ; return;   }
+    if(!fil)    { cout << "Save: Åbning af filen " << fn << " mislykkedes.\n" ; return;   }
     cout << fixed << setprecision(15);
     for(double e : v)   fil << e << endl;
 }
-void Save_Intor(const string& fn, const Intor& v)
+void Save(const string& fn, const Intor& v)
 {
     ofstream fil(fn);
     if(!fil)    { cout << "Filåbning mislykkedes."; return;   }
     for(int e : v)   fil << e << endl;
 }
-void Save_Intrix(const string& fn, Intrix A)
+void Save(const string& fn, Intrix A)
 {
     ofstream fil(fn);
     if(!fil) {  cout << "Could not read the file " << fn << ".";  return;   }
@@ -43,7 +43,7 @@ void Save_Intrix(const string& fn, Intrix A)
         }
         fil << endl;
     }
-    //cout << "Save_Intrix: Sucessfully saved (" << A.size() << " x " << A[0].size() << ") Intrix to " << fn << ".\n";
+    //cout << "Save: Sucessfully saved (" << A.size() << " x " << A[0].size() << ") Intrix to " << fn << ".\n";
 }
 void Compress_DR(const string& fn, Matrix DR)
 {
@@ -91,25 +91,25 @@ void Process_Files() {
 
         //Each Stock's lifespan
         Intrix DR_Dates = Load_Dates_from_DR(Exo_FilePath + "DR.txt");
-        Save_Intrix(Proccessed_FilePath + "DR_Dates.txt", DR_Dates);
+        Save(Proccessed_FilePath + "DR_Dates.txt", DR_Dates);
         cout << "Created " << Proccessed_FilePath << "DR_Dates.txt\n";
         //Intrix DR_Dates = Load_Intrix(Proccessed_FilePath+"DR_Dates.txt",-1); //if DR_Dates already exists
 
         //DR_iDates, Stock's lifespan in index values starting from (0) the first recorded data date.
         Intor DateList = Load_Intor(Exo_FilePath + "DateList.txt");
         Intrix DR_iDates = Dates_to_iDates(DR_Dates, DateList, 1);
-        Save_Intrix(Proccessed_FilePath + "DR_iDates.txt", DR_iDates);
+        Save(Proccessed_FilePath + "DR_iDates.txt", DR_iDates);
         cout << "Created " << Proccessed_FilePath << "DR_iDates.txt\n";
 
         //iPeriods
         Intrix iPeriods = Yearly_iPeriods(DateList);
-        Save_Intrix(Proccessed_FilePath + "iPeriods.txt", iPeriods);
+        Save(Proccessed_FilePath + "iPeriods.txt", iPeriods);
         cout << "Created " << Proccessed_FilePath << "iPeriods.txt\n";
 
         //DailyDailyRFR
         Vector DailyYearlyRFR = Load_Vector(Exo_FilePath + "DailyYearlyRiskFreeReturn.txt");
         Vector DailyDailyRFR = DailyYearly_to_DailyDaily_Return(DailyYearlyRFR, iPeriods);
-        Save_Vector(Proccessed_FilePath + "riskFreeReturn.txt", DailyDailyRFR);
+        Save(Proccessed_FilePath + "riskFreeReturn.txt", DailyDailyRFR);
         cout << "Created " << Proccessed_FilePath << "riskFreeReturn.txt\n";
 
         //Other files, usefull for testing

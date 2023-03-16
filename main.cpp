@@ -13,6 +13,7 @@
 #include "testing.h"        //to be used for testing only
 #include "createData.h"     //Create era/period data
 #include "load_output.h"    //Load output files/data
+#include "backtest.h"
 
 using namespace std;
 using Intor = vector<int>;
@@ -52,6 +53,6 @@ int main()
     //Tensor5 Data = Load_Era_PrePost_Period("run");
 
 
-    Tensor5 Data = Load_Era_Period_PrePost("run");
-    BackTesting(Data);
+
+    BackTesting("test", "run");
 }

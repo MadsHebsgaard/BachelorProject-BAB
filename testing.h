@@ -122,12 +122,12 @@ void OldTestCalculations(int max, double max_ratio, int minTradingDays)
         akk_riskFree.insert(akk_riskFree.end(), beta_alpha_return[5].begin(), beta_alpha_return[5].end());
     }
     //Save Data
-    Save_Vector("Data_Test/beta.txt",beta);
-    Save_Vector("Data_Test/alpha.txt",alpha);
-    Save_Vector("Data_Test/akk_return.txt",akk_return);
-    Save_Vector("Data_Test/PERMNO.txt",PERMNO);
-    Save_Vector("Data_Test/akk_sp500.txt", akk_sp500);
-    Save_Vector("Data_Test/akk_riskFree.txt", akk_riskFree);
+    Save("Data_Test/beta.txt", beta);
+    Save("Data_Test/alpha.txt", alpha);
+    Save("Data_Test/akk_return.txt", akk_return);
+    Save("Data_Test/PERMNO.txt", PERMNO);
+    Save("Data_Test/akk_sp500.txt", akk_sp500);
+    Save("Data_Test/akk_riskFree.txt", akk_riskFree);
 }
 
 void TestCalculations(string folderName, int max, double max_ratio, int minTradingDays, int n_periods)
@@ -177,12 +177,12 @@ void TestCalculations(string folderName, int max, double max_ratio, int minTradi
         mkdir(periodDirName.c_str());
 
         //Save Data
-        Save_Vector(periodDirName + "/beta.txt",beta[i]);
-        Save_Vector(periodDirName + "/alpha.txt",alpha[i]);
-        Save_Vector(periodDirName + "/akk_return.txt",akk_return[i]);
-        Save_Vector(periodDirName + "/PERMNO.txt",PERMNO[i]);
-        Save_Vector(periodDirName + "/akk_sp500.txt", akk_sp500[i]);
-        Save_Vector(periodDirName + "/akk_riskFree.txt", akk_riskFree[i]);
+        Save(periodDirName + "/beta.txt", beta[i]);
+        Save(periodDirName + "/alpha.txt", alpha[i]);
+        Save(periodDirName + "/akk_return.txt", akk_return[i]);
+        Save(periodDirName + "/PERMNO.txt", PERMNO[i]);
+        Save(periodDirName + "/akk_sp500.txt", akk_sp500[i]);
+        Save(periodDirName + "/akk_riskFree.txt", akk_riskFree[i]);
     }
 }
 
@@ -246,7 +246,7 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
             vector<string> prePost {periodPre_DirName, periodPost_DirName};
             for (int i = 0; i < prePost.size(); ++i) {
                 mkdir(prePost[i].c_str());
-                for (int file = 0; file < fileNames.size(); ++file)    Save_Vector(prePost[i] + fileNames[file], twoPeriod_Data[i][file]);
+                for (int file = 0; file < fileNames.size(); ++file)    Save(prePost[i] + fileNames[file], twoPeriod_Data[i][file]);
             }
         }
     }
