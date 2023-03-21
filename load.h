@@ -21,6 +21,7 @@ void HowToGetStarted()
     cout << "   - " << "DailyYearlyRiskFreeReturn\n";
     cout << "   - " << "sp500\n";
     cout << "   - " << "DateList\n";
+    cout << "   - " << "Mth_PrevCap\n";
 
     cout << "When all the files are present, Run \"Process_Files()\"." << endl << endl;
 }
@@ -241,6 +242,24 @@ Matrix Load_DR_Compressed(const string& fn, int max)
     cout << "Load_DR_Compressed: Sucssesfully loaded " << i << " stocks to DR from " << fn << ".\n";
     return DR;
 }
+Intrix Load_MC_Compressed(const string& fn)
+{
+    ifstream fil(fn);
+    if(!fil) {  cout << "Load_DR_Compressed: Could not read the file " << fn << ".";  return Intrix(0);   }
+    Intrix MC;
+
+    int n;
+    while(fil >> n)
+    {
+        Intor stock(n);
+        for (int j = 0; j < n; ++j)
+        {
+            fil >> stock[j];
+        }
+        MC.push_back(stock);
+    }
+    return MC;
+}
 Intrix Load_Intrix(const string& fn, int max)
 {
     ifstream fil(fn);
@@ -355,60 +374,71 @@ Intrix Load_StockDays_Compressed(const string& fn, bool With_Id, int max)
     cout << "Sucssesfully loaded " << i << " stocks to StockDays.\n";
     return StockDays;
 }
-
-
-/*
-intrix S_SS = Load_Dates("permnos_dates.csv");
-Load SP500 //TODO
-vector<double> beta_period(3);
-for (int i = 0; i < 3; ++i)
-{
-    beta_period[i] = CovSP500(SP500, SP500, period_nr[0+i], period_nr[1+i]);
-}
-*/  // vector || pushback
-/*
-Matrix Load_DR_Compressed(string fn)
+Intrix Load_Mth_MarketCap_dollars(string fn)
 {
     ifstream fil(fn);
-    if(!fil) {  cout << "Could not read the file " << fn << ".";  return Matrix(0);   }
-    Matrix DR(36146);
-    int n;
+    if(!fil) {  cout << "Could not read the file " << fn << ".\n";  return Intrix(0);   }
+    //fil >> std::setprecision(2);
 
-    for (int i = 0; i < 36146; ++i)
+    Intrix MrkCap(0);
+    string junk;
+    int IDnew;
+    int IDold;
+    int date;
+    double PrevCap;
+    string string_number;
+
+    fil >> junk;
+    fil >> junk;
+    fil >> junk;
+    fil >> IDnew;
+    fil >> date;
+
+    IDold = IDnew;
+    Intor Stock(2);
+    Stock[0] = IDnew;
+
+    int Factor = 1; //If above 100, Intrix -> Matrix
+    bool ZeroMonth = true;
+    bool LaterMonth = false;
+
+    while (!fil.eof())
     {
-        fil >> n;
-        DR[i].resize(n);
-        for (int j = 0; j < n; ++j) { fil >> DR[i][j]; }
-    }
-    return DR;
-}
-*/  // not using || pushback
-/*
-Matrix Load_DR_Compressed(string fn)
-{
-    ifstream fil(fn);
-    if(!fil) {  cout << "Could not read the file " << fn << ".";  return Matrix(0);   }
-
-    Matrix DR;
-    double number;
-    Vector Stock;
-    int i=0;
-
-    fil >> number;
-    Stock.push_back(number);
-
-    while(fil >> number)
-    {
-        if(number < 10000)  Stock.push_back(number);
-        else
+        if (IDnew != IDold)
         {
-            DR.push_back(Stock);
-            Stock = Vector(0);
-            Stock.push_back(number);
-            if(i % 500 == 0)  cout << "ID = " << number << " i = " << i << endl;
-            i++;
+            MrkCap.push_back(Stock);
+            Stock = Intor(2);
+            Stock[0] = IDnew;
+            IDold = IDnew;
+            PrevCap = -0.002;
+            ZeroMonth = true;
+            LaterMonth = false;
         }
+        fil >> string_number;
+
+        if (string_number.contains('.')) {
+            ZeroMonth = false;
+            PrevCap = stod(string_number); //string_number = MthPrevCap
+            if(fil.eof()){  Stock.push_back(PrevCap); MrkCap.push_back(Stock); }
+            fil >> IDnew;
+        }
+        else {
+            //PrevCap = -0.002; //PrevCap should be the same as last month as the best estimation
+            IDnew = stoi(string_number);    //string_number = IDnew;
+        }
+
+        if(!ZeroMonth & !LaterMonth)
+        {
+            Stock[1] = date/100;
+        }
+
+        if(!ZeroMonth)
+            Stock.push_back(PrevCap * 1000/Factor);
+
+        if(!ZeroMonth)
+            LaterMonth = true;
+        fil >> date;
     }
-    return DR;
+    cout << "Load_Monthly_MarketCap is done...\n";
+    return MrkCap;
 }
-*/  // stock and vector || pushback

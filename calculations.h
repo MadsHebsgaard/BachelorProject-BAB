@@ -508,4 +508,25 @@ int numSubdirsInDir(string dirPath)
     }
     return num_subdirs;
 }
+Intrix MarketCap_Monthly_to_Yearly(Intrix ICm)
+{
+    Intrix ICy(0);
+    int FirstMonth;
+    for (int i = 0; i < ICm.size(); ++i) {
+        Intor Stock(2);
+        Stock[0]  = ICm[i][0];        //ID
+        FirstMonth = ICm[i][1] % 100;
+        Stock[1] = ICm[i][1] / 100;
+        if (FirstMonth != 1) Stock[1]++;
 
+        if (FirstMonth == 1) FirstMonth = 13;
+        for (int j = 2+(13-FirstMonth); j < ICm[i].size(); j+=12) {
+            Stock.push_back(ICm[i][j]);
+        }
+        if(Stock.size()>2)  //Ignore stock that die before Market Cap is recorded.
+        {
+            ICy.push_back(Stock);
+        }
+    }
+    return ICy;
+}

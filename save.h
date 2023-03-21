@@ -72,11 +72,26 @@ void Compress_DR_StockDays(const string& fn, Intrix StockDays)
     }
     cout << "Compress_DR_StockDays: Sucssesfully Compressed/Saved daily 'dates' of " << StockDays.size() << " stocks to " << fn << ".\n";
 }
+void Compress_MC(const string& fn, Intrix MC)
+{
+    ofstream fil(fn);
+    if(!fil) {  cout << "Could not read the file " << fn << ".";  return;   }
 
+    int i=0;
+    for (auto & stock : MC)
+    {
+        fil << stock.size() << " " << stock[0] << " " << stock[1];
+        for (int j = 2; j < stock.size(); ++j)  {
+            if((j-2) % 10 == 0) fil << endl;
+            fil << stock[j] << " ";
+        }
+        fil << endl << endl;
+    }
+}
 void Process_Files() {
     string Exo_FilePath = "Data/Input/Exo_Files/";
     string Proccessed_FilePath = "Data/Input/Processed_Files/";
-    const std::vector<std::string> filenames = {"sp500.txt", "DR.txt", "DateList.txt", "DailyYearlyRiskFreeReturn.txt"};
+    const std::vector<std::string> filenames = {"sp500.txt", "DR.txt", "DateList.txt", "DailyYearlyRiskFreeReturn.txt, Mth_PrevCap.txt"};
 
     if (areFilesExistInDirectory(filenames, Exo_FilePath))
     {
@@ -111,6 +126,11 @@ void Process_Files() {
         Vector DailyDailyRFR = DailyYearly_to_DailyDaily_Return(DailyYearlyRFR, iPeriods);
         Save(Proccessed_FilePath + "riskFreeReturn.txt", DailyDailyRFR);
         cout << "Created " << Proccessed_FilePath << "riskFreeReturn.txt\n";
+
+        //Market Cap
+        Intrix MarketCap_Mth = Load_Mth_MarketCap_dollars("Data/Input/Exo_files/Mth_PrevCap.txt");
+        Intrix MarketCap_yearly = MarketCap_Monthly_to_Yearly(MarketCap_Mth);
+        Compress_MC("Data/Input/Processed_Files/MarketCap_yr.txt", MarketCap_yearly);
 
         //Other files, usefull for testing
         //Intrix StockDays = Load_StockDays_from_DR("DR.txt", max);

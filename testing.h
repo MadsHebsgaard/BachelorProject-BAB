@@ -253,3 +253,58 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
     LogFile(folderName, logMessage);    //Add more information to logMessage
 }
  */
+/*
+intrix S_SS = Load_Dates("permnos_dates.csv");
+Load SP500 //TODO
+vector<double> beta_period(3);
+for (int i = 0; i < 3; ++i)
+{
+    beta_period[i] = CovSP500(SP500, SP500, period_nr[0+i], period_nr[1+i]);
+}
+*/  // vector || pushback
+/*
+Matrix Load_DR_Compressed(string fn)
+{
+    ifstream fil(fn);
+    if(!fil) {  cout << "Could not read the file " << fn << ".";  return Matrix(0);   }
+    Matrix DR(36146);
+    int n;
+
+    for (int i = 0; i < 36146; ++i)
+    {
+        fil >> n;
+        DR[i].resize(n);
+        for (int j = 0; j < n; ++j) { fil >> DR[i][j]; }
+    }
+    return DR;
+}
+*/  // not using || pushback
+/*
+Matrix Load_DR_Compressed(string fn)
+{
+    ifstream fil(fn);
+    if(!fil) {  cout << "Could not read the file " << fn << ".";  return Matrix(0);   }
+
+    Matrix DR;
+    double number;
+    Vector Stock;
+    int i=0;
+
+    fil >> number;
+    Stock.push_back(number);
+
+    while(fil >> number)
+    {
+        if(number < 10000)  Stock.push_back(number);
+        else
+        {
+            DR.push_back(Stock);
+            Stock = Vector(0);
+            Stock.push_back(number);
+            if(i % 500 == 0)  cout << "ID = " << number << " i = " << i << endl;
+            i++;
+        }
+    }
+    return DR;
+}
+*/  // stock and vector || pushback
