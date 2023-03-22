@@ -139,6 +139,11 @@ void Process_Files() {
         Matrix MarketCap_yearly = MarketCap_Monthly_to_Yearly(MarketCap_Mth);
         Compress_MC("Data/Input/Processed_Files/MarketCap_yr.txt", MarketCap_yearly, factor);
 
+        //Inflation factors
+        Vector Inflation = Load_Vector(Exo_FilePath + "Inflation.txt");
+        Vector Inflation_factors = Inflation_Factors_from_yrly_inf(Inflation);
+        Save(Proccessed_FilePath +"Inflation_Factor.txt", Inflation_factors);
+
         //Other files, usefull for testing
         //Intrix StockDays = Load_StockDays_from_DR("DR.txt", max);
         //Compress_DR_StockDays("DR_StockDays.txt", StockDays);    } else {

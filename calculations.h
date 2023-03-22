@@ -334,9 +334,9 @@ vector<Intrix> SplitPeriods(const Intrix& iPeriods, int x, bool rest_in_first_pe
 
     return threeDimVec;
 }
-Matrix Beta_Alpha_Calculate(Matrix DR, Matrix MC, Intrix iDates, const Vector& sp500, const Vector& riskFree, const Intor& Dates, const Intor& iPeriod, int minTradingDaysBeforePeriod)
+Matrix Beta_Alpha_Calculate(Matrix DR, Matrix MC, Intrix iDates, const Vector& sp500, const Vector& riskFree, const Intor& Dates, const Intor& iPeriod, double Inflation_factor, int minTradingDaysBeforePeriod)
 {
-    Vector beta(0), stock_return_akk(0), sp500_return_akk(0), alpha(0), PERMNO(0), riskFree_Return_akk(0), marketCap(0);
+    Vector beta(0), stock_return_akk(0), sp500_return_akk(0), alpha(0), PERMNO(0), riskFree_Return_akk(0), marketCap(0), inflation_factor(0);
     int iStart_sp500, iEnd_sp500, iStart_DR, iLength, Active_days;
     double stockBeta, stockAlpha, sp500_Return_akk, stock_Return_akk, RiskFree_Return_akk, Active_years, stock_MrkCap;
     Vector akk_stock_sp500_RiskFree_Return;
@@ -389,7 +389,22 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Matrix MC, Intrix iDates, const Vector& s
         //Find Market Cap.
         int yr = Dates[iPeriod[0]]/10000;
         int yr_between = yr - MC[i][1];
-        stock_MrkCap = MC[i][yr_between+2];
+        int n_MC = MC[i].size()+1;
+
+        if(n_MC > yr_between+2)
+            stock_MrkCap = MC[i][yr_between+2];
+        else if(n_MC > 2)
+            stock_MrkCap = MC[i][n_MC-1];
+        else
+            continue;
+
+        if(stock_MrkCap < 100)
+            cout << "stock_MrkCap < 100";
+
+
+        //Last index if real index later then MC[i].size()
+            //If last index is then <2, continue
+
 
         //Save data to vectors
         beta.push_back(stockBeta);
@@ -398,12 +413,13 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Matrix MC, Intrix iDates, const Vector& s
         sp500_return_akk.push_back(sp500_Return_akk);
         riskFree_Return_akk.push_back(RiskFree_Return_akk);
         marketCap.push_back(stock_MrkCap);
+        inflation_factor.push_back(Inflation_factor);
 
         PERMNO.push_back(DR[i][0]);
     }
     //double avg_sp500 = Calculate_akk_Return(sp500, sp500, riskFree, riskFree.size(), 0, 0)[1];
     //double avg_riskFree = Calculate_akk_Return(sp500, sp500, riskFree, riskFree.size(), 0, 0)[2];
-    return {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk, marketCap};
+    return {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk, marketCap, inflation_factor};
 }
 inline bool filePath_exists(const std::string& name) {
     ifstream f(name.c_str());
@@ -497,11 +513,11 @@ vector<Matrix> Overlapping_ID_Matrix_Array(Matrix A, Matrix B, int ID_row)
     }
     return C;
 }
-vector<Matrix> TwoPeriod_Calc(Matrix DR, Matrix MC, Intrix iDates, Vector sp500, Vector riskFree, Intor Dates, Intor Pre_iPeriod, Intor iPeriod)
+vector<Matrix> TwoPeriod_Calc(Matrix DR, Matrix MC, Intrix iDates, Vector sp500, Vector riskFree, Intor Dates, Intor Pre_iPeriod, Intor iPeriod, Vector Inflation_factor)
 {
     vector<Matrix> A(0);
-    Matrix Pre_Period_values = Beta_Alpha_Calculate(DR, MC, iDates, sp500, riskFree, Dates, Pre_iPeriod, 0);
-    Matrix Period_values = Beta_Alpha_Calculate(DR, MC, iDates, sp500, riskFree, Dates, iPeriod, 20); //20 is somewhat arbitrary, should make beta less likely to be numerically huge
+    Matrix Pre_Period_values = Beta_Alpha_Calculate(DR, MC, iDates, sp500, riskFree, Dates, Pre_iPeriod, Inflation_factor[0], 0);
+    Matrix Period_values = Beta_Alpha_Calculate(DR, MC, iDates, sp500, riskFree, Dates, iPeriod, Inflation_factor[1], 20); //20 is somewhat arbitrary, should make beta less likely to be numerically huge
     return Overlapping_ID_Matrix_Array(Pre_Period_values, Period_values, 3);
 }
 int numFilesInDir(string dirPath)
@@ -546,3 +562,13 @@ Matrix MarketCap_Monthly_to_Yearly(Matrix MCm)
     }
     return MCy;
 }
+Vector Inflation_Factors_from_yrly_inf(Vector yrly_inflation)
+{
+    Vector infl_Factors(yrly_inflation.size()+1);
+    infl_Factors[0] = 1;
+    for (int yr = 1; yr < yrly_inflation.size()+1; ++yr) {
+        infl_Factors[yr] = infl_Factors[yr-1] * (1-yrly_inflation[yr-1]);
+    }
+    return infl_Factors;
+}
+
