@@ -26,11 +26,15 @@ void Era_PrePost_Calculations(string folderName, double max_ratio, int minTradin
     string Proccessed_FilePath = "Data/Input/Processed_Files/";
 
     //DR with condition for inclusion
-    Matrix DR_ny = Edit_DR(DR,max_ratio,minTradingDays);
+    DR = Edit_DR(DR, max_ratio, minTradingDays);
+
+    //Market Cap
+    Matrix MC = Load_MC_Compressed("Data/Input/Processed_Files/MarketCap_yr.txt");
+    MC = Remove_Missing_ID(MC, Matrix_Column(DR, 0));
 
     //iDates with same stocks as DR_ny
     Intrix iDates = Load_Intrix(Proccessed_FilePath+"DR_iDates.txt", -1);
-    iDates = Remove_Missing_ID_Intrix(iDates, Matrix_Column(DR_ny, 0));
+    iDates = Remove_Missing_ID(iDates, Matrix_Column(DR, 0));
 
     //Load sp500 and riskFree returns & SP500 dates
     Vector sp500 = Load_Vector(Exo_FilePath+"sp500.txt");
@@ -40,6 +44,7 @@ void Era_PrePost_Calculations(string folderName, double max_ratio, int minTradin
     //Load iPeriods and create Era_List
     Intrix iPeriods = Load_Intrix(Proccessed_FilePath+"iPeriods.txt", -1);
     vector<Intrix> Era_List = SplitPeriods(iPeriods, n_Eras, true);
+
 
     cout << "Era_PrePost_Calculations: Files was Loaded for \"" << folderName << "\".\n\n";
     mkdir("Data/Output");
@@ -55,6 +60,8 @@ void Era_PrePost_Calculations(string folderName, double max_ratio, int minTradin
     int eraLength;
     int periodNr = 1;
 
+    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt"};
+
     for (int Era = 0; Era < Era_List.size(); ++Era)
     {
         vector<Matrix> tP_DataSet(vector<Matrix>(2,Matrix(0,Vector(0))));
@@ -66,7 +73,7 @@ void Era_PrePost_Calculations(string folderName, double max_ratio, int minTradin
         for (int Period = 1; Period <= eraLength; Period++)
         {
             //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
-            twoPeriod_Data = TwoPeriod_Calc(DR_ny, iDates, sp500, riskFree, Dates, iPeriods[periodNr-1], iPeriods[periodNr]);
+            twoPeriod_Data = TwoPeriod_Calc(DR, MC, iDates, sp500, riskFree, Dates, iPeriods[periodNr-1], iPeriods[periodNr]);
             push_back(tP_DataSet, twoPeriod_Data);
             periodNr++;
         }
@@ -78,7 +85,6 @@ void Era_PrePost_Calculations(string folderName, double max_ratio, int minTradin
 
         //Create files in directory for the era
         vector<string> paths {preDirName, periodDirName};
-        vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
         for (int prePost = 0; prePost < paths.size(); ++prePost) {
             mkdir(paths[prePost].c_str());
             for (int file = 0; file < fileNames.size(); ++file)
@@ -93,26 +99,30 @@ void Era_Calculations(string folderName, double max_ratio, int minTradingDays, i
     string Proccessed_FilePath = "Data/Input/Processed_Files/";
 
     //DR with condition for inclusion
-    Matrix DR_ny = Edit_DR(DR,max_ratio,minTradingDays);
+    DR = Edit_DR(DR, max_ratio, minTradingDays);
 
-    //iDates with same stocks as DR_ny
+    //Market Cap
+    Matrix MC = Load_MC_Compressed("Data/Input/Processed_Files/MarketCap_yr.txt");
+    MC = Remove_Missing_ID(MC, Matrix_Column(DR, 0));
+
+    //iDates with same stocks as DR
     Intrix iDates = Load_Intrix(Proccessed_FilePath+"DR_iDates.txt", -1);
-    iDates = Remove_Missing_ID_Intrix(iDates, Matrix_Column(DR_ny, 0));
+    iDates = Remove_Missing_ID(iDates, Matrix_Column(DR, 0));
 
     //Load sp500 and riskFree returns & SP500 dates
     Vector sp500 = Load_Vector(Exo_FilePath+"sp500.txt");
     Vector riskFree = Load_Vector(Proccessed_FilePath+"riskFreeReturn.txt");
     Intor Dates = Load_Intor(Exo_FilePath+"DateList.txt");
 
+    //Periods
+    Intrix iPeriods = Load_Intrix(Proccessed_FilePath+"iPeriods.txt", -1);
+    vector<Intrix> Era_List = SplitPeriods(iPeriods, n_Eras, true);
+
     cout << "Files was Loaded.\n\n";
 
     Matrix beta(n_Eras, Vector(0)), alpha(n_Eras, Vector(0)), PERMNO(n_Eras, Vector(0));
     Matrix akk_return(n_Eras, Vector(0)), akk_sp500(n_Eras, Vector(0)), akk_riskFree(n_Eras, Vector(0));
     Matrix beta_alpha_return;
-
-    Intrix iPeriods = Load_Intrix(Proccessed_FilePath+"iPeriods.txt", -1);
-    vector<Intrix> Era_List = SplitPeriods(iPeriods, n_Eras, true);
-
     vector<Matrix> DataSet(Era_List.size());
 
     mkdir("Data/Output");
@@ -122,7 +132,7 @@ void Era_Calculations(string folderName, double max_ratio, int minTradingDays, i
     mkdir(folderName.c_str());
 
     string dirName = folderName + "/Era";
-    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
+    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt"};
 
     for (int i = 0; i < Era_List.size(); ++i)
     {
@@ -131,7 +141,7 @@ void Era_Calculations(string folderName, double max_ratio, int minTradingDays, i
         for (auto & iPeriod : Era_List[i])
         {
             //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
-            beta_alpha_return = Beta_Alpha_Calculate(DR_ny, iDates, sp500, riskFree, Dates, iPeriod, minTradingDays);
+            beta_alpha_return = Beta_Alpha_Calculate(DR, MC, iDates, sp500, riskFree, Dates, iPeriod, minTradingDays);
             push_back(DataSet[i], beta_alpha_return);
         }
         // Creating a directory for the Era and each file in Era
@@ -146,11 +156,15 @@ void Period_Calculations(string folderName, double max_ratio, int minTradingDays
     string Proccessed_FilePath = "Data/Input/Processed_Files/";
 
     //DR with condition for inclusion
-    Matrix DR_ny = Edit_DR(DR, max_ratio,minTradingDays);
+    DR = Edit_DR(DR, max_ratio, minTradingDays);
 
-    //iDates with same stocks as DR_ny
+    //Market Cap
+    Matrix MC = Load_MC_Compressed("Data/Input/Processed_Files/MarketCap_yr.txt");
+    MC = Remove_Missing_ID(MC, Matrix_Column(DR, 0));
+
+    //iDates with same stocks as DR
     Intrix iDates = Load_Intrix(Proccessed_FilePath+"DR_iDates.txt", -1);
-    iDates = Remove_Missing_ID_Intrix(iDates, Matrix_Column(DR_ny, 0));
+    iDates = Remove_Missing_ID(iDates, Matrix_Column(DR, 0));
 
     //Load sp500 and riskFree returns & SP500 dates
     Vector sp500 = Load_Vector(Exo_FilePath+"sp500.txt");
@@ -168,13 +182,13 @@ void Period_Calculations(string folderName, double max_ratio, int minTradingDays
     mkdir(folderName.c_str());
 
     string dirName = folderName + "/Period";
-    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
+    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt"};
     Matrix Data;
 
     for (int period = skipFirst_n; period < iPeriods.size(); ++period)
     {
         //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
-        Data = Beta_Alpha_Calculate(DR_ny, iDates, sp500, riskFree, Dates, iPeriods[period], 130);
+        Data = Beta_Alpha_Calculate(DR, MC, iDates, sp500, riskFree, Dates, iPeriods[period], 130);
 
         // Creating a directory and files for the period
         string periodDirName = dirName + "_" + to_string(period + 1 - skipFirst_n);
@@ -188,16 +202,19 @@ void Era_Period_PrePost_Calculations(string folderName, double max_ratio, int mi
     vector<string> logMessage = {"max_ratio = "+to_string(max_ratio),"minTradingDays = "+to_string(minTradingDays)};
     string Exo_FilePath = "Data/Input/Exo_Files/";
     string Proccessed_FilePath = "Data/Input/Processed_Files/";
-
+    logMessage.push_back("DR.size() = "+to_string(DR.size()));
 
     //DR with condition for inclusion
-    Matrix DR_ny = Edit_DR(DR,max_ratio,minTradingDays);
+    DR = Edit_DR(DR, max_ratio, minTradingDays);
     logMessage.push_back("DR.size() = "+to_string(DR.size()));
-    logMessage.push_back("DR_ny.size() = "+to_string(DR_ny.size()));
 
-    //iDates with same stocks as DR_ny
+    //Market Cap
+    Matrix MC = Load_MC_Compressed("Data/Input/Processed_Files/MarketCap_yr.txt");
+    MC = Remove_Missing_ID(MC, Matrix_Column(DR, 0));
+
+    //iDates with same stocks as DR
     Intrix iDates = Load_Intrix(Proccessed_FilePath+"DR_iDates.txt", -1);
-    iDates = Remove_Missing_ID_Intrix(iDates, Matrix_Column(DR_ny, 0));
+    iDates = Remove_Missing_ID(iDates, Matrix_Column(DR, 0));
 
     //Load sp500 and riskFree returns & SP500 dates
     Vector sp500 = Load_Vector(Exo_FilePath+"sp500.txt");
@@ -215,7 +232,7 @@ void Era_Period_PrePost_Calculations(string folderName, double max_ratio, int mi
     std::filesystem::remove_all(folderName.c_str());
     mkdir(folderName.c_str());
     vector<Matrix> twoPeriod_Data;
-    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
+    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt"};
 
     int minEraLength = floor((iPeriods.size()-1.0)/(n_Eras+0.0));
     int rest = iPeriods.size()-1-minEraLength*n_Eras;
@@ -238,11 +255,10 @@ void Era_Period_PrePost_Calculations(string folderName, double max_ratio, int mi
         for (int eraPeriod = 1; eraPeriod <= eraLength; eraPeriod++)
         {
             if(eraPeriod==61)
-            {
                 cout << "her";
-            }
+
             //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
-            twoPeriod_Data = TwoPeriod_Calc(DR_ny, iDates, sp500, riskFree, Dates, iPeriods[periodNr -1], iPeriods[periodNr]);
+            twoPeriod_Data = TwoPeriod_Calc(DR, MC, iDates, sp500, riskFree, Dates, iPeriods[periodNr - 1], iPeriods[periodNr]);
 
             //Create dirs and then files
             string preDirName = dirName + "/Period_" + to_string(eraPeriod);
@@ -269,13 +285,19 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
     vector<string> logMessage = {"max_ratio = "+to_string(max_ratio),"minTradingDays = "+to_string(minTradingDays)};
     string Exo_FilePath = "Data/Input/Exo_Files/";
     string Proccessed_FilePath = "Data/Input/Processed_Files/";
+    logMessage.push_back("DR.size() = "+to_string(DR.size()));
 
     //DR with condition for inclusion
-    Matrix DR_ny = Edit_DR(DR,max_ratio,minTradingDays);
+    DR = Edit_DR(DR, max_ratio, minTradingDays);
+    logMessage.push_back("DR.size() = "+to_string(DR.size()));
+
+    //Market Cap
+    Matrix MC = Load_MC_Compressed("Data/Input/Processed_Files/MarketCap_yr.txt");
+    MC = Remove_Missing_ID(MC, Matrix_Column(DR, 0));
 
     //iDates with same stocks as DR_ny
     Intrix iDates = Load_Intrix(Proccessed_FilePath+"DR_iDates.txt", -1);
-    iDates = Remove_Missing_ID_Intrix(iDates, Matrix_Column(DR_ny, 0));
+    iDates = Remove_Missing_ID(iDates, Matrix_Column(DR, 0));
 
     //Load sp500 and riskFree returns & SP500 dates
     Vector sp500 = Load_Vector(Exo_FilePath+"sp500.txt");
@@ -292,7 +314,7 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
     std::filesystem::remove_all(folderName.c_str());
     mkdir(folderName.c_str());
     vector<Matrix> twoPeriod_Data;
-    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
+    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt"};
 
     int minEraLength = floor((iPeriods.size()-1.0)/(n_Eras+0.0));
     int rest = iPeriods.size()-1-minEraLength*n_Eras;
@@ -317,7 +339,7 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
         {
             //if(Era == 0 && eraPeriod == 0) continue;
             //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
-            twoPeriod_Data = TwoPeriod_Calc(DR_ny, iDates, sp500, riskFree, Dates, iPeriods[periodNr-1], iPeriods[periodNr]);
+            twoPeriod_Data = TwoPeriod_Calc(DR, MC, iDates, sp500, riskFree, Dates, iPeriods[periodNr-1], iPeriods[periodNr]);
 
             //Create dirs and then files
             string periodPre_DirName = preDirName + "/Period_" + to_string(eraPeriod);
@@ -337,4 +359,3 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
     }
     LogFile(folderName, logMessage);    //Add more information to logMessage
 }
-

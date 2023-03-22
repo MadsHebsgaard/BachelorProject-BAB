@@ -180,9 +180,20 @@ Matrix Edit_DR(Matrix A, double max_ratio, int minTradingDays)
 
     return DR_ny;
 }
-Intrix Remove_Missing_ID_Intrix(Intrix A, Vector v)
+Intrix Remove_Missing_ID(Intrix A, Vector v)
 {
     Intrix B(0);
+    size_t k=0;
+    for (auto & stock : A)
+    {
+        //if(k==v.size()-1) break;
+        if(v[k] == stock[0]) {k++;   B.push_back(stock);}
+    }
+    return B;
+}
+Matrix Remove_Missing_ID(Matrix A, Vector v)
+{
+    Matrix B(0);
     size_t k=0;
     for (auto & stock : A)
     {
@@ -323,11 +334,11 @@ vector<Intrix> SplitPeriods(const Intrix& iPeriods, int x, bool rest_in_first_pe
 
     return threeDimVec;
 }
-Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const Vector& riskFree, const Intor& Dates, const Intor& iPeriod, int minTradingDaysBeforePeriod)
+Matrix Beta_Alpha_Calculate(Matrix DR, Matrix MC, Intrix iDates, const Vector& sp500, const Vector& riskFree, const Intor& Dates, const Intor& iPeriod, int minTradingDaysBeforePeriod)
 {
-    Vector beta(0), stock_return_akk(0), sp500_return_akk(0), alpha(0), PERMNO(0), riskFree_Return_akk(0);
+    Vector beta(0), stock_return_akk(0), sp500_return_akk(0), alpha(0), PERMNO(0), riskFree_Return_akk(0), marketCap(0);
     int iStart_sp500, iEnd_sp500, iStart_DR, iLength, Active_days;
-    double stockBeta, stockAlpha, sp500_Return_akk, stock_Return_akk, RiskFree_Return_akk, Active_years;
+    double stockBeta, stockAlpha, sp500_Return_akk, stock_Return_akk, RiskFree_Return_akk, Active_years, stock_MrkCap;
     Vector akk_stock_sp500_RiskFree_Return;
     int emptyCount;
     int Active_TradingDaysBeforePeriod;
@@ -375,17 +386,24 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Intrix iDates, const Vector& sp500, const
         Active_years = 0; //Active_years = (DaysBetween(Dates[iStart_sp500], Dates[iStart_sp500+Active_days]) + 0.0) / 365.24;
         stockAlpha = Calculate_StockAlpha(stockBeta, stock_Return_akk, sp500_Return_akk, RiskFree_Return_akk, Active_years);
 
+        //Find Market Cap.
+        int yr = Dates[iPeriod[0]]/10000;
+        int yr_between = yr - MC[i][1];
+        stock_MrkCap = MC[i][yr_between+2];
+
         //Save data to vectors
         beta.push_back(stockBeta);
         alpha.push_back(stockAlpha);
         stock_return_akk.push_back(stock_Return_akk);
         sp500_return_akk.push_back(sp500_Return_akk);
         riskFree_Return_akk.push_back(RiskFree_Return_akk);
+        marketCap.push_back(stock_MrkCap);
+
         PERMNO.push_back(DR[i][0]);
     }
     //double avg_sp500 = Calculate_akk_Return(sp500, sp500, riskFree, riskFree.size(), 0, 0)[1];
     //double avg_riskFree = Calculate_akk_Return(sp500, sp500, riskFree, riskFree.size(), 0, 0)[2];
-    return {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk};
+    return {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk, marketCap};
 }
 inline bool filePath_exists(const std::string& name) {
     ifstream f(name.c_str());
@@ -479,11 +497,11 @@ vector<Matrix> Overlapping_ID_Matrix_Array(Matrix A, Matrix B, int ID_row)
     }
     return C;
 }
-vector<Matrix> TwoPeriod_Calc(Matrix DR, Intrix iDates, Vector sp500, Vector riskFree, Intor Dates, Intor Pre_iPeriod, Intor iPeriod)
+vector<Matrix> TwoPeriod_Calc(Matrix DR, Matrix MC, Intrix iDates, Vector sp500, Vector riskFree, Intor Dates, Intor Pre_iPeriod, Intor iPeriod)
 {
     vector<Matrix> A(0);
-    Matrix Pre_Period_values = Beta_Alpha_Calculate(DR, iDates, sp500, riskFree, Dates, Pre_iPeriod, 0);
-    Matrix Period_values = Beta_Alpha_Calculate(DR, iDates, sp500, riskFree, Dates, iPeriod, 20); //20 is somewhat arbitrary, should make beta less likely to be numerically huge
+    Matrix Pre_Period_values = Beta_Alpha_Calculate(DR, MC, iDates, sp500, riskFree, Dates, Pre_iPeriod, 0);
+    Matrix Period_values = Beta_Alpha_Calculate(DR, MC, iDates, sp500, riskFree, Dates, iPeriod, 20); //20 is somewhat arbitrary, should make beta less likely to be numerically huge
     return Overlapping_ID_Matrix_Array(Pre_Period_values, Period_values, 3);
 }
 int numFilesInDir(string dirPath)
@@ -508,25 +526,23 @@ int numSubdirsInDir(string dirPath)
     }
     return num_subdirs;
 }
-Intrix MarketCap_Monthly_to_Yearly(Intrix ICm)
+Matrix MarketCap_Monthly_to_Yearly(Matrix MCm)
 {
-    Intrix ICy(0);
+    Matrix MCy(0);
     int FirstMonth;
-    for (int i = 0; i < ICm.size(); ++i) {
-        Intor Stock(2);
-        Stock[0]  = ICm[i][0];        //ID
-        FirstMonth = ICm[i][1] % 100;
-        Stock[1] = ICm[i][1] / 100;
+    for (int i = 0; i < MCm.size(); ++i) {
+        Vector Stock(2);
+        Stock[0]  = MCm[i][0];              //ID
+        FirstMonth = fmod(MCm[i][1],100);   // MCm[i][1] % 100
+        Stock[1] = MCm[i][1] / 100;
         if (FirstMonth != 1) Stock[1]++;
 
         if (FirstMonth == 1) FirstMonth = 13;
-        for (int j = 2+(13-FirstMonth); j < ICm[i].size(); j+=12) {
-            Stock.push_back(ICm[i][j]);
+        for (int j = 2+(13-FirstMonth); j < MCm[i].size(); j+=12) {
+            Stock.push_back(MCm[i][j]);
         }
-        if(Stock.size()>2)  //Ignore stock that die before Market Cap is recorded.
-        {
-            ICy.push_back(Stock);
-        }
+        //if(Stock.size()>2)  //Ignore stock that die before Market Cap is recorded.
+            MCy.push_back(Stock);
     }
-    return ICy;
+    return MCy;
 }

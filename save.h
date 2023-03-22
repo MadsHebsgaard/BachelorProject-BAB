@@ -17,8 +17,12 @@ void Save(const string& fn, const Vector& v)
 {
     ofstream fil(fn);
     if(!fil)    { cout << "Save: Åbning af filen " << fn << " mislykkedes.\n" ; return;   }
-    cout << fixed << setprecision(15);
-    for(double e : v)   fil << e << endl;
+    fil << fixed << setprecision(8);
+    for(double e : v)   {
+        if(floor(e) == e)   fil << setprecision(0);
+        else                fil << setprecision(8);
+        fil << e << endl;
+    }
 }
 void Save(const string& fn, const Intor& v)
 {
@@ -72,10 +76,12 @@ void Compress_DR_StockDays(const string& fn, Intrix StockDays)
     }
     cout << "Compress_DR_StockDays: Sucssesfully Compressed/Saved daily 'dates' of " << StockDays.size() << " stocks to " << fn << ".\n";
 }
-void Compress_MC(const string& fn, Intrix MC)
+void Compress_MC(const string& fn, Matrix MC, int factor)
 {
     ofstream fil(fn);
     if(!fil) {  cout << "Could not read the file " << fn << ".";  return;   }
+
+    fil << fixed << setprecision(0+floor(log10(factor)));
 
     int i=0;
     for (auto & stock : MC)
@@ -128,9 +134,10 @@ void Process_Files() {
         cout << "Created " << Proccessed_FilePath << "riskFreeReturn.txt\n";
 
         //Market Cap
-        Intrix MarketCap_Mth = Load_Mth_MarketCap_dollars("Data/Input/Exo_files/Mth_PrevCap.txt");
-        Intrix MarketCap_yearly = MarketCap_Monthly_to_Yearly(MarketCap_Mth);
-        Compress_MC("Data/Input/Processed_Files/MarketCap_yr.txt", MarketCap_yearly);
+        int factor = 1; //todo: needs to be 1 atm (Compress_MC)
+        Matrix MarketCap_Mth = Load_Mth_MarketCap("Data/Input/Exo_files/Mth_PrevCap.txt", factor);
+        Matrix MarketCap_yearly = MarketCap_Monthly_to_Yearly(MarketCap_Mth);
+        Compress_MC("Data/Input/Processed_Files/MarketCap_yr.txt", MarketCap_yearly, factor);
 
         //Other files, usefull for testing
         //Intrix StockDays = Load_StockDays_from_DR("DR.txt", max);

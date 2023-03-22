@@ -84,6 +84,7 @@ void Date_Checker(int max)
         }
     }
 }
+/*
 void OldTestCalculations(int max, double max_ratio, int minTradingDays)
 {
     //DR with condition for inclusion
@@ -102,7 +103,7 @@ void OldTestCalculations(int max, double max_ratio, int minTradingDays)
 
     //iDates with same stocks as DR_ny
     Intrix iDates = Load_Intrix("DR_iDates.txt", max);
-    iDates = Remove_Missing_ID_Intrix(iDates, Matrix_Column(DR_ny, 0));
+    iDates = Remove_Missing_ID(iDates, Matrix_Column(DR_ny, 0));
 
     cout << "Files was Loaded.\n\n";
 
@@ -111,7 +112,7 @@ void OldTestCalculations(int max, double max_ratio, int minTradingDays)
     for (auto & iPeriod : iPeriods)
     {
         //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
-        beta_alpha_return = Beta_Alpha_Calculate(DR_ny, iDates, sp500, riskFree, Dates, iPeriod, 130);
+        beta_alpha_return = Beta_Alpha_Calculate(DR_ny, MC, iDates, sp500, riskFree, Dates, iPeriod, 130);
 
         //Store Data
         beta.insert(beta.end(), beta_alpha_return[0].begin(), beta_alpha_return[0].end());
@@ -129,7 +130,8 @@ void OldTestCalculations(int max, double max_ratio, int minTradingDays)
     Save("Data_Test/akk_sp500.txt", akk_sp500);
     Save("Data_Test/akk_riskFree.txt", akk_riskFree);
 }
-
+*/
+/*
 void TestCalculations(string folderName, int max, double max_ratio, int minTradingDays, int n_periods)
 {
     //DR with condition for inclusion
@@ -138,7 +140,7 @@ void TestCalculations(string folderName, int max, double max_ratio, int minTradi
 
     //iDates with same stocks as DR_ny
     Intrix iDates = Load_Intrix("DR_iDates.txt", max);
-    iDates = Remove_Missing_ID_Intrix(iDates, Matrix_Column(DR_ny, 0));
+    iDates = Remove_Missing_ID(iDates, Matrix_Column(DR_ny, 0));
 
     //Load sp500 and riskFree returns & SP500 dates
     Vector sp500 = Load_Vector("sp500.txt");
@@ -185,7 +187,7 @@ void TestCalculations(string folderName, int max, double max_ratio, int minTradi
         Save(periodDirName + "/akk_riskFree.txt", akk_riskFree[i]);
     }
 }
-
+*/
 
 
 /*
@@ -200,7 +202,7 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
 
     //iDates with same stocks as DR_ny
     Intrix iDates = Load_Intrix(Proccessed_FilePath+"DR_iDates.txt", -1);
-    iDates = Remove_Missing_ID_Intrix(iDates, Matrix_Column(DR_ny, 0));
+    iDates = Remove_Missing_ID(iDates, Matrix_Column(DR_ny, 0));
 
     //Load sp500 and riskFree returns & SP500 dates
     Vector sp500 = Load_Vector(Exo_FilePath+"sp500.txt");

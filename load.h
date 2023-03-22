@@ -242,16 +242,16 @@ Matrix Load_DR_Compressed(const string& fn, int max)
     cout << "Load_DR_Compressed: Sucssesfully loaded " << i << " stocks to DR from " << fn << ".\n";
     return DR;
 }
-Intrix Load_MC_Compressed(const string& fn)
+Matrix Load_MC_Compressed(const string& fn)
 {
     ifstream fil(fn);
-    if(!fil) {  cout << "Load_DR_Compressed: Could not read the file " << fn << ".";  return Intrix(0);   }
-    Intrix MC;
+    if(!fil) {  cout << "Load_DR_Compressed: Could not read the file " << fn << ".";  return Matrix(0);   }
+    Matrix MC;
 
     int n;
     while(fil >> n)
     {
-        Intor stock(n);
+        Vector stock(n);
         for (int j = 0; j < n; ++j)
         {
             fil >> stock[j];
@@ -374,13 +374,13 @@ Intrix Load_StockDays_Compressed(const string& fn, bool With_Id, int max)
     cout << "Sucssesfully loaded " << i << " stocks to StockDays.\n";
     return StockDays;
 }
-Intrix Load_Mth_MarketCap_dollars(string fn)
+Matrix Load_Mth_MarketCap(string fn, int Factor)
 {
     ifstream fil(fn);
-    if(!fil) {  cout << "Could not read the file " << fn << ".\n";  return Intrix(0);   }
+    if(!fil) {  cout << "Could not read the file " << fn << ".\n";  return Matrix(0);   }
     //fil >> std::setprecision(2);
 
-    Intrix MrkCap(0);
+    Matrix MC(0);
     string junk;
     int IDnew;
     int IDold;
@@ -395,10 +395,9 @@ Intrix Load_Mth_MarketCap_dollars(string fn)
     fil >> date;
 
     IDold = IDnew;
-    Intor Stock(2);
+    Vector Stock(2);
     Stock[0] = IDnew;
 
-    int Factor = 1; //If above 100, Intrix -> Matrix
     bool ZeroMonth = true;
     bool LaterMonth = false;
 
@@ -406,11 +405,11 @@ Intrix Load_Mth_MarketCap_dollars(string fn)
     {
         if (IDnew != IDold)
         {
-            MrkCap.push_back(Stock);
-            Stock = Intor(2);
+            MC.push_back(Stock);
+            Stock = Vector(2);
             Stock[0] = IDnew;
             IDold = IDnew;
-            PrevCap = -0.002;
+            //PrevCap = -0.002;
             ZeroMonth = true;
             LaterMonth = false;
         }
@@ -419,7 +418,8 @@ Intrix Load_Mth_MarketCap_dollars(string fn)
         if (string_number.contains('.')) {
             ZeroMonth = false;
             PrevCap = stod(string_number); //string_number = MthPrevCap
-            if(fil.eof()){  Stock.push_back(PrevCap); MrkCap.push_back(Stock); }
+            if(fil.eof()){  Stock.push_back(PrevCap); MC.push_back(Stock); }    //Rare case if eof
+
             fil >> IDnew;
         }
         else {
@@ -435,10 +435,13 @@ Intrix Load_Mth_MarketCap_dollars(string fn)
         if(!ZeroMonth)
             Stock.push_back(PrevCap * 1000/Factor);
 
+        if(PrevCap < 0)
+            cout << "<0";
+
         if(!ZeroMonth)
             LaterMonth = true;
         fil >> date;
     }
     cout << "Load_Monthly_MarketCap is done...\n";
-    return MrkCap;
+    return MC;
 }
