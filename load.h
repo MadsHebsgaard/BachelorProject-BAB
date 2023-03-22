@@ -1,4 +1,5 @@
 #pragma once
+
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -401,13 +402,13 @@ Matrix Load_Mth_MarketCap(string fn, int Factor)
     bool ZeroMonth = true;
     bool LaterMonth = false;
 
-    while (!fil.eof())
+    while (true)
     {
-        if (IDnew != IDold)
-        {
+        if (IDnew != IDold) {
             MC.push_back(Stock);
             Stock = Vector(2);
             Stock[0] = IDnew;
+            Stock[1] = -2;   //nan("") is maybe better
             IDold = IDnew;
             //PrevCap = -0.002;
             ZeroMonth = true;
@@ -419,28 +420,17 @@ Matrix Load_Mth_MarketCap(string fn, int Factor)
             ZeroMonth = false;
             PrevCap = stod(string_number); //string_number = MthPrevCap
             if(fil.eof()){  Stock.push_back(PrevCap); MC.push_back(Stock); }    //Rare case if eof
-
             fil >> IDnew;
         }
-        else {
-            //PrevCap = -0.002; //PrevCap should be the same as last month as the best estimation
-            IDnew = stoi(string_number);    //string_number = IDnew;
-        }
-
-        if(!ZeroMonth & !LaterMonth)
-        {
-            Stock[1] = date/100;
-        }
-
-        if(!ZeroMonth)
+        else    IDnew = stoi(string_number);    //string_number = IDnew;
+        if(!ZeroMonth)  {
+            if(!LaterMonth)
+                Stock[1] = date/100;
             Stock.push_back(PrevCap * 1000/Factor);
-
-        if(PrevCap < 0)
-            cout << "<0";
-
-        if(!ZeroMonth)
             LaterMonth = true;
+        }
         fil >> date;
+        if(fil.eof())   {MC.push_back(Stock); break;}
     }
     cout << "Load_Monthly_MarketCap is done...\n";
     return MC;

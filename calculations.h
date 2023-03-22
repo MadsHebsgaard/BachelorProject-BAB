@@ -389,7 +389,7 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Matrix MC, Intrix iDates, const Vector& s
         //Find Market Cap.
         int yr = Dates[iPeriod[0]]/10000;
         int yr_between = yr - MC[i][1];
-        int n_MC = MC[i].size()+1;
+        int n_MC = MC[i].size();
 
         if(n_MC > yr_between+2)
             stock_MrkCap = MC[i][yr_between+2];
