@@ -445,3 +445,48 @@ Matrix Load_Mth_MarketCap(string fn, int Factor)
     cout << "Load_Monthly_MarketCap is done...\n";
     return MC;
 }
+void Load_Data(Matrix& DR, double& max_ratio, int& minTradingDays, vector<string>& logMessage
+               , string& Exo_FilePath, string& Proccessed_FilePath, Matrix& MC, Vector& Inflation_Factor
+               , Intrix& iDates, Vector& sp500, Vector& riskFree, Intor& Dates, Intrix& iPeriods
+               , string& folderName, string& methodName)
+{
+    //File paths
+    Exo_FilePath = "Data/Input/Exo_Files/";
+    Proccessed_FilePath = "Data/Input/Processed_Files/";
+
+    //Log messages
+    logMessage.push_back("max_ratio = "+to_string(max_ratio));
+    logMessage.push_back("minTradingDays = "+to_string(minTradingDays));
+    logMessage.push_back("DR.size() = "+to_string(DR.size()));
+
+    //DR with condition for inclusion
+    DR = Edit_DR(DR, max_ratio, minTradingDays);
+    logMessage.push_back("DR.size() = "+to_string(DR.size()));
+
+    //Market Cap
+    MC = Load_MC_Compressed("Data/Input/Processed_Files/MarketCap_yr.txt");
+    MC = Remove_Missing_ID(MC, Matrix_Column(DR, 0));
+
+    //Inflation factor
+    Inflation_Factor = Load_Vector("Data/Input/Processed_Files/Inflation_Factor.txt");
+
+    //iDates with same stocks as DR
+    iDates = Load_Intrix(Proccessed_FilePath+"DR_iDates.txt", -1);
+    iDates = Remove_Missing_ID(iDates, Matrix_Column(DR, 0));
+
+    //Load sp500 and riskFree returns & SP500 dates
+    sp500 = Load_Vector(Exo_FilePath+"sp500.txt");
+    riskFree = Load_Vector(Proccessed_FilePath+"riskFreeReturn.txt");
+    Dates = Load_Intor(Exo_FilePath+"DateList.txt");
+
+    //Load iPeriods and create Era_List
+    iPeriods = Load_Intrix(Proccessed_FilePath+"iPeriods.txt", -1);
+
+    //Create files and folderName = folderPath
+    mkdir("Data/Output");
+    cout << methodName << "_Calculations: Files was Loaded for \"" << folderName << "\".\n\n";
+    mkdir(("Data/Output/" + methodName).c_str());
+    folderName = "Data/Output/" + methodName + "/" + folderName;
+    std::filesystem::remove_all(folderName.c_str());
+    mkdir(folderName.c_str());
+}

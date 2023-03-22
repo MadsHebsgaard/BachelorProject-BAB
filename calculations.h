@@ -550,13 +550,15 @@ Matrix MarketCap_Monthly_to_Yearly(Matrix MCm)
         Vector Stock(2);
         Stock[0]  = MCm[i][0];              //ID
         FirstMonth = fmod(MCm[i][1],100);   // MCm[i][1] % 100
-        Stock[1] = MCm[i][1] / 100;
+        int yr = MCm[i][1] / 100;
+        Stock[1] = yr;
         if (FirstMonth != 1) Stock[1]++;
 
         if (FirstMonth == 1) FirstMonth = 13;
         for (int j = 2+(13-FirstMonth); j < MCm[i].size(); j+=12) {
             Stock.push_back(MCm[i][j]);
         }
+        if((MCm[i].size()-2-(13-FirstMonth))%12 == 0)   Stock.push_back(MCm[i][MCm[i].size()-1]);
         //if(Stock.size()>2)  //Ignore stock that die before Market Cap is recorded.
             MCy.push_back(Stock);
     }
