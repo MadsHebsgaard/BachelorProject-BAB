@@ -399,7 +399,7 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Matrix MC, Intrix iDates, const Vector& s
             continue;
 
         if(stock_MrkCap < 100)
-            cout << "stock_MrkCap < 100";
+            cout << "Mrk Cap = " << stock_MrkCap << " For ID: " << DR[i][0] << " in year = " << yr << endl;
 
 
         //Last index if real index later then MC[i].size()
@@ -569,8 +569,7 @@ Vector Inflation_Factors_from_yrly_inf(Vector yrly_inflation)
     Vector infl_Factors(yrly_inflation.size()+1);
     infl_Factors[0] = 1;
     for (int yr = 1; yr < yrly_inflation.size()+1; ++yr) {
-        infl_Factors[yr] = infl_Factors[yr-1] * (1-yrly_inflation[yr-1]);
+        infl_Factors[yr] = infl_Factors[yr-1] / (1+yrly_inflation[yr-1]);
     }
     return infl_Factors;
 }
-

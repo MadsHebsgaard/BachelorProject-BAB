@@ -97,7 +97,7 @@ void Compress_MC(const string& fn, Matrix MC, int factor)
 void Process_Files() {
     string Exo_FilePath = "Data/Input/Exo_Files/";
     string Proccessed_FilePath = "Data/Input/Processed_Files/";
-    const std::vector<std::string> filenames = {"sp500.txt", "DR.txt", "DateList.txt", "DailyYearlyRiskFreeReturn.txt, Mth_PrevCap.txt"};
+    const std::vector<std::string> filenames = {"sp500.txt", "DR.txt", "DateList.txt", "DailyYearlyRiskFreeReturn.txt", "Mth_PrevCap.txt"};
 
     if (areFilesExistInDirectory(filenames, Exo_FilePath))
     {
