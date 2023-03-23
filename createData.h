@@ -16,21 +16,22 @@ using Tensor3 = vector<Matrix>;
 using Tensor4 = vector<Tensor3>;
 using Tensor5 = vector<Tensor4>;
 
-
 #pragma once
 
 void Era_PrePost_Calculations(string folderName, double max_ratio, int minTradingDays, int n_Eras, Matrix DR)
 {
-    //Create input data
+    string  methodName = "Era_PrePost";
+
+
     vector<string> logMessage, fileNames;
-    string Exo_FilePath, Proccessed_FilePath, methodName = "Era_PrePost";
+    string Exo_FilePath, Proccessed_FilePath;
     Matrix MC;
     Vector Inflation_Factor, sp500, riskFree;
     Intrix iPeriods, iDates;
     Intor Dates;
-
     Load_Data(DR, max_ratio, minTradingDays, logMessage, Exo_FilePath, Proccessed_FilePath, MC, Inflation_Factor, iDates
             , sp500, riskFree, Dates, iPeriods, folderName, methodName, fileNames);
+
 
     int minEraLength = floor((iPeriods.size()-1.0)/(n_Eras+0.0));
     int rest = iPeriods.size()-1-minEraLength*n_Eras;
@@ -71,15 +72,18 @@ void Era_PrePost_Calculations(string folderName, double max_ratio, int minTradin
 }
 void Era_Calculations(string folderName, double max_ratio, int minTradingDays, int n_Eras, Matrix DR)
 {
-    //Create input data
+    string methodName = "Era";
+
+
     vector<string> logMessage, fileNames;
-    string Exo_FilePath, Proccessed_FilePath, methodName = "Era";
+    string Exo_FilePath, Proccessed_FilePath;
     Matrix MC;
     Vector Inflation_Factor, sp500, riskFree;
     Intrix iPeriods, iDates;
     Intor Dates;
     Load_Data(DR, max_ratio, minTradingDays, logMessage, Exo_FilePath, Proccessed_FilePath, MC, Inflation_Factor, iDates, sp500, riskFree, Dates, iPeriods, folderName, methodName, fileNames);
     string dirName = folderName + "/Era";
+
 
     int minEraLength = floor((iPeriods.size()-1.0)/(n_Eras+0.0));
     int rest = iPeriods.size()-1-minEraLength*n_Eras;
@@ -104,12 +108,15 @@ void Era_Calculations(string folderName, double max_ratio, int minTradingDays, i
         mkdir(periodDirName.c_str());
         for (int file = 0; file < fileNames.size(); ++file) Save(periodDirName + fileNames[file], DataSet[file]);
     }
+    LogFile(folderName, logMessage);    //Add more information to logMessage
 }
 void Period_Calculations(string folderName, double max_ratio, int minTradingDays, Matrix DR, int skipFirst_n)
 {
-    //Create input data
+    string methodName = "Period";
+
+
     vector<string> logMessage, fileNames;
-    string Exo_FilePath, Proccessed_FilePath, methodName = "Period";
+    string Exo_FilePath, Proccessed_FilePath;
     Matrix MC;
     Vector Inflation_Factor, sp500, riskFree;
     Intrix iPeriods, iDates;
@@ -130,13 +137,16 @@ void Period_Calculations(string folderName, double max_ratio, int minTradingDays
         mkdir(periodDirName.c_str());
         for (int file = 0; file < fileNames.size(); ++file) Save(periodDirName + fileNames[file], Data[file]);
     }
+    LogFile(folderName, logMessage);    //Add more information to logMessage
 }
 
 void Era_Period_PrePost_Calculations(string folderName, double max_ratio, int minTradingDays, int n_Eras, Matrix DR)   //TODO: Make this
 {
-    //Create input data
+    string methodName = "Era_Period_PrePost";
+
+
     vector<string> logMessage, fileNames;
-    string Exo_FilePath, Proccessed_FilePath, methodName = "Era_Period_PrePost";
+    string Exo_FilePath, Proccessed_FilePath;
     Matrix MC;
     Vector Inflation_Factor, sp500, riskFree;
     Intrix iPeriods, iDates;
@@ -189,14 +199,15 @@ void Era_Period_PrePost_Calculations(string folderName, double max_ratio, int mi
 }
 void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int minTradingDays, int n_Eras, Matrix DR)
 {
-    //Create input data
+    string methodName = "Era_PrePost_Period";
+
+
     vector<string> logMessage, fileNames;
-    string Exo_FilePath, Proccessed_FilePath, methodName = "Era_PrePost_Period";
+    string Exo_FilePath, Proccessed_FilePath;
     Matrix MC;
     Vector Inflation_Factor, sp500, riskFree;
     Intrix iPeriods, iDates;
     Intor Dates;
-
     Load_Data(DR, max_ratio, minTradingDays, logMessage, Exo_FilePath, Proccessed_FilePath, MC, Inflation_Factor, iDates
             , sp500, riskFree, Dates, iPeriods, folderName, methodName, fileNames);
 

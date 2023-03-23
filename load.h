@@ -416,7 +416,7 @@ Matrix Load_Mth_MarketCap(string fn, int Factor)
         }
         fil >> string_number;
 
-        if (string_number.contains('.')) {
+        if (string_number.find('.') != std::string::npos) {
             ZeroMonth = false;
             PrevCap = stod(string_number); //string_number = MthPrevCap
             if(fil.eof()){  Stock.push_back(PrevCap); MC.push_back(Stock); }    //Rare case if eof
@@ -432,7 +432,6 @@ Matrix Load_Mth_MarketCap(string fn, int Factor)
         fil >> date;
         if(fil.eof())   {MC.push_back(Stock); break;}
     }
-    cout << "Load_Monthly_MarketCap is done...\n";
     return MC;
 }
 void Load_Data(Matrix& DR, double& max_ratio, int& minTradingDays, vector<string>& logMessage
@@ -446,7 +445,7 @@ void Load_Data(Matrix& DR, double& max_ratio, int& minTradingDays, vector<string
     fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt", "/infl_factor.txt", "/year.txt"};
 
     //Log messages
-    logMessage.push_back("max_ratio = "+to_string(max_ratio));
+    logMessage = {"max_ratio = "+to_string(max_ratio)};
     logMessage.push_back("minTradingDays = "+to_string(minTradingDays));
     logMessage.push_back("DR.size() = "+to_string(DR.size()));
 
