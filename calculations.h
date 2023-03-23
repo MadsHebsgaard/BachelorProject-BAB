@@ -336,7 +336,7 @@ vector<Intrix> SplitPeriods(const Intrix& iPeriods, int x, bool rest_in_first_pe
 }
 Matrix Beta_Alpha_Calculate(Matrix DR, Matrix MC, Intrix iDates, const Vector& sp500, const Vector& riskFree, const Intor& Dates, const Intor& iPeriod, double Inflation_factor, int minTradingDaysBeforePeriod)
 {
-    Vector beta(0), stock_return_akk(0), sp500_return_akk(0), alpha(0), PERMNO(0), riskFree_Return_akk(0), marketCap(0), inflation_factor(0);
+    Vector beta(0), stock_return_akk(0), sp500_return_akk(0), alpha(0), PERMNO(0), riskFree_Return_akk(0), marketCap(0), inflation_factor(0), year_v(0);;
     int iStart_sp500, iEnd_sp500, iStart_DR, iLength, Active_days;
     double stockBeta, stockAlpha, sp500_Return_akk, stock_Return_akk, RiskFree_Return_akk, Active_years, stock_MrkCap;
     Vector akk_stock_sp500_RiskFree_Return;
@@ -414,12 +414,12 @@ Matrix Beta_Alpha_Calculate(Matrix DR, Matrix MC, Intrix iDates, const Vector& s
         riskFree_Return_akk.push_back(RiskFree_Return_akk);
         marketCap.push_back(stock_MrkCap);
         inflation_factor.push_back(Inflation_factor);
-
+        year_v.push_back(yr);
         PERMNO.push_back(DR[i][0]);
     }
     //double avg_sp500 = Calculate_akk_Return(sp500, sp500, riskFree, riskFree.size(), 0, 0)[1];
     //double avg_riskFree = Calculate_akk_Return(sp500, sp500, riskFree, riskFree.size(), 0, 0)[2];
-    return {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk, marketCap, inflation_factor};
+    return {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk, marketCap, inflation_factor, year_v};
 }
 inline bool filePath_exists(const std::string& name) {
     ifstream f(name.c_str());

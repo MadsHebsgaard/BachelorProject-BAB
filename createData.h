@@ -22,15 +22,15 @@ using Tensor5 = vector<Tensor4>;
 void Era_PrePost_Calculations(string folderName, double max_ratio, int minTradingDays, int n_Eras, Matrix DR)
 {
     //Create input data
-    vector<string> logMessage;
+    vector<string> logMessage, fileNames;
     string Exo_FilePath, Proccessed_FilePath, methodName = "Era_PrePost";
     Matrix MC;
     Vector Inflation_Factor, sp500, riskFree;
     Intrix iPeriods, iDates;
     Intor Dates;
 
-    Load_Data(DR, max_ratio, minTradingDays, logMessage, Exo_FilePath, Proccessed_FilePath, MC, Inflation_Factor, iDates, sp500, riskFree, Dates, iPeriods, folderName, methodName);
-    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt", "/infl_factor"};
+    Load_Data(DR, max_ratio, minTradingDays, logMessage, Exo_FilePath, Proccessed_FilePath, MC, Inflation_Factor, iDates
+            , sp500, riskFree, Dates, iPeriods, folderName, methodName, fileNames);
 
     int minEraLength = floor((iPeriods.size()-1.0)/(n_Eras+0.0));
     int rest = iPeriods.size()-1-minEraLength*n_Eras;
@@ -72,16 +72,14 @@ void Era_PrePost_Calculations(string folderName, double max_ratio, int minTradin
 void Era_Calculations(string folderName, double max_ratio, int minTradingDays, int n_Eras, Matrix DR)
 {
     //Create input data
-    vector<string> logMessage;
+    vector<string> logMessage, fileNames;
     string Exo_FilePath, Proccessed_FilePath, methodName = "Era";
     Matrix MC;
     Vector Inflation_Factor, sp500, riskFree;
     Intrix iPeriods, iDates;
     Intor Dates;
-    Load_Data(DR, max_ratio, minTradingDays, logMessage, Exo_FilePath, Proccessed_FilePath, MC, Inflation_Factor, iDates, sp500, riskFree, Dates, iPeriods, folderName, methodName);
-
+    Load_Data(DR, max_ratio, minTradingDays, logMessage, Exo_FilePath, Proccessed_FilePath, MC, Inflation_Factor, iDates, sp500, riskFree, Dates, iPeriods, folderName, methodName, fileNames);
     string dirName = folderName + "/Era";
-    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt", "/infl_factor"};
 
     int minEraLength = floor((iPeriods.size()-1.0)/(n_Eras+0.0));
     int rest = iPeriods.size()-1-minEraLength*n_Eras;
@@ -110,16 +108,16 @@ void Era_Calculations(string folderName, double max_ratio, int minTradingDays, i
 void Period_Calculations(string folderName, double max_ratio, int minTradingDays, Matrix DR, int skipFirst_n)
 {
     //Create input data
-    vector<string> logMessage;
+    vector<string> logMessage, fileNames;
     string Exo_FilePath, Proccessed_FilePath, methodName = "Period";
     Matrix MC;
     Vector Inflation_Factor, sp500, riskFree;
     Intrix iPeriods, iDates;
     Intor Dates;
-    Load_Data(DR, max_ratio, minTradingDays, logMessage, Exo_FilePath, Proccessed_FilePath, MC, Inflation_Factor, iDates, sp500, riskFree, Dates, iPeriods, folderName, methodName);
+    Load_Data(DR, max_ratio, minTradingDays, logMessage, Exo_FilePath, Proccessed_FilePath, MC, Inflation_Factor, iDates
+            , sp500, riskFree, Dates, iPeriods, folderName, methodName, fileNames);
 
     string dirName = folderName + "/Period";
-    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt", "/infl_factor"};
     Matrix Data;
 
     for (int period = skipFirst_n; period < iPeriods.size(); ++period)
@@ -137,14 +135,14 @@ void Period_Calculations(string folderName, double max_ratio, int minTradingDays
 void Era_Period_PrePost_Calculations(string folderName, double max_ratio, int minTradingDays, int n_Eras, Matrix DR)   //TODO: Make this
 {
     //Create input data
-    vector<string> logMessage;
+    vector<string> logMessage, fileNames;
     string Exo_FilePath, Proccessed_FilePath, methodName = "Era_Period_PrePost";
     Matrix MC;
     Vector Inflation_Factor, sp500, riskFree;
     Intrix iPeriods, iDates;
     Intor Dates;
-    Load_Data(DR, max_ratio, minTradingDays, logMessage, Exo_FilePath, Proccessed_FilePath, MC, Inflation_Factor, iDates, sp500, riskFree, Dates, iPeriods, folderName, methodName);
-    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt", "/infl_factor"};
+    Load_Data(DR, max_ratio, minTradingDays, logMessage, Exo_FilePath, Proccessed_FilePath, MC, Inflation_Factor, iDates
+            , sp500, riskFree, Dates, iPeriods, folderName, methodName, fileNames);
 
     int minEraLength = floor((iPeriods.size()-1.0)/(n_Eras+0.0));
     int rest = iPeriods.size()-1-minEraLength*n_Eras;
@@ -192,14 +190,15 @@ void Era_Period_PrePost_Calculations(string folderName, double max_ratio, int mi
 void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int minTradingDays, int n_Eras, Matrix DR)
 {
     //Create input data
-    vector<string> logMessage;
+    vector<string> logMessage, fileNames;
     string Exo_FilePath, Proccessed_FilePath, methodName = "Era_PrePost_Period";
     Matrix MC;
     Vector Inflation_Factor, sp500, riskFree;
     Intrix iPeriods, iDates;
     Intor Dates;
-    Load_Data(DR, max_ratio, minTradingDays, logMessage, Exo_FilePath, Proccessed_FilePath, MC, Inflation_Factor, iDates, sp500, riskFree, Dates, iPeriods, folderName, methodName);
-    vector<string> fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt", "/infl_factor"};
+
+    Load_Data(DR, max_ratio, minTradingDays, logMessage, Exo_FilePath, Proccessed_FilePath, MC, Inflation_Factor, iDates
+            , sp500, riskFree, Dates, iPeriods, folderName, methodName, fileNames);
 
     int minEraLength = floor((iPeriods.size()-1.0)/(n_Eras+0.0));
     int rest = iPeriods.size()-1-minEraLength*n_Eras;

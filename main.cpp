@@ -39,20 +39,25 @@ using Tensor5 = vector<Tensor4>;
 
 int main()
 {
+    string Exo_FilePath = "Data/Input/Exo_Files/";
+    string Proccessed_FilePath = "Data/Input/Processed_Files/";
 
     //TODO: Mangler sp500 2022 data
+    //Process_Files();  //TODO: Factor != 1, should not impact ID or number of years in file
 
-    //Process_Files();
-    //Matrix DR = Load_DR_Compressed("Data/Input/Processed_Files/DR_Compressed.txt", -1);
-    //Era_Period_PrePost_Calculations("run", 0.3, 100, 1, DR);
+    Matrix DR = Load_DR_Compressed("Data/Input/Processed_Files/DR_Compressed.txt", 1000);
+    Era_Calculations("Run_yr", 0.3, 100, 1, DR);
 
-    //Era_Calculations("run_test60", 0.3, 100, 1, DR);
+
+    //Era_Period_PrePost_Calculations("run_A.size() test", 0.3, 100, 1, DR);
+
     //Period_Calculations("run_test60", 0.3, 100, DR, 1);
     //Era_PrePost_Calculations("runtest", 0.3, 100, 5, DR);
     //Era_PrePost_Period_Calculations("run", 0.3, 100, 5, DR);
     //Tensor5 Data = Load_Era_PrePost_Period("run");
 
+    //BackTesting("test", "run");
 
 
-    BackTesting("test", "run");
+    return 0;
 }

@@ -438,11 +438,12 @@ Matrix Load_Mth_MarketCap(string fn, int Factor)
 void Load_Data(Matrix& DR, double& max_ratio, int& minTradingDays, vector<string>& logMessage
                , string& Exo_FilePath, string& Proccessed_FilePath, Matrix& MC, Vector& Inflation_Factor
                , Intrix& iDates, Vector& sp500, Vector& riskFree, Intor& Dates, Intrix& iPeriods
-               , string& folderName, string& methodName)
+               , string& folderName, string& methodName, vector<string>& fileNames)
 {
     //File paths
     Exo_FilePath = "Data/Input/Exo_Files/";
     Proccessed_FilePath = "Data/Input/Processed_Files/";
+    fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt", "/infl_factor.txt", "/year.txt"};
 
     //Log messages
     logMessage.push_back("max_ratio = "+to_string(max_ratio));
