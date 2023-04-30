@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include "calculations.h"
 
 using namespace std;
 using Intor = vector<int>;
@@ -9,9 +10,6 @@ using Vector = vector<double>;
 using Matrix = vector<vector<double>>;
 
 #pragma once
-#define BACHELOR_SAVE_H
-
-#include "calculations.h"
 
 void Save(const string& fn, const Vector& v)
 {
@@ -31,6 +29,25 @@ void Save(const string& fn, const Intor& v)
     for(int e : v)   fil << e << endl;
 }
 void Save(const string& fn, Intrix A)
+{
+    ofstream fil(fn);
+    if(!fil) {  cout << "Could not read the file " << fn << ".";  return;   }
+
+    fil << A.size() << endl;
+    fil << A[0].size() << endl << endl;
+
+    for (int i = 0; i < A.size(); ++i)
+    {
+        //fil << setw(10) << A[i][0];
+        for (int j = 0; j < A[0].size(); ++j)
+        {
+            fil << setw(10) << A[i][j];
+        }
+        fil << endl;
+    }
+    //cout << "Save: Sucessfully saved (" << A.size() << " x " << A[0].size() << ") Intrix to " << fn << ".\n";
+}
+void Save(const string& fn, Matrix A)
 {
     ofstream fil(fn);
     if(!fil) {  cout << "Could not read the file " << fn << ".";  return;   }
@@ -94,79 +111,85 @@ void Compress_MC(const string& fn, Matrix MC, int factor)
         fil << endl << endl;
     }
 }
-void Process_Files(bool Reload_Everything, bool Reload_smallFiles)
+
+void saveLogFile(string filePath, vector<string> Message)
 {
-    string Exo_FilePath = "Data/Input/Exo_Files/";
-    string Proccessed_FilePath = "Data/Input/Processed_Files/";
-    const std::vector<std::string> filenames = {"sp500.txt", "DR.txt", "DateList.txt", "DailyYearlyRiskFreeReturn.txt", "Mth_PrevCap.txt"};
-
-    if (areFilesExistInDirectory(filenames, Exo_FilePath))
-    {
-        Intrix DR_Dates;
-        mkdir("Data/Input/Processed_Files");
-        cout << "\nCreating all necessary files and putting them in the directory" << Proccessed_FilePath << ":\n\n";
-        int max = 99999999;
-
-        if(Reload_Everything || !areFilesExistInDirectory({"DR_Compressed.txt"}, Proccessed_FilePath))
-        {
-            //Daily Return on each stock compressed
-            Matrix DR = Load_DR(Exo_FilePath + "DR.txt", max);  //TODO: uncomment
-            Compress_DR(Proccessed_FilePath + "DR_Compressed.txt", DR);   //TODO: uncomment
-            cout << "Created " << Proccessed_FilePath << "DR_Compressed.txt\n";
-        }
-        if(Reload_Everything || !areFilesExistInDirectory({"DR_Dates.txt"}, Proccessed_FilePath))
-        {
-            //Each Stock's lifespan
-            Intrix DR_Dates = Load_Dates_from_DR(Exo_FilePath + "DR.txt");
-            Save(Proccessed_FilePath + "DR_Dates.txt", DR_Dates);
-            cout << "Created " << Proccessed_FilePath << "DR_Dates.txt\n";
-        }
-        else
-        {
-            DR_Dates = Load_Intrix(Proccessed_FilePath + "DR_Dates.txt",-1); //if DR_Dates already exists
-        }
-        vector<string> smallFiles = {"DR_iDates.txt", "iPeriods.txt", "riskFreeReturn.txt", "MarketCap_yr.txt", "Inflation_Factor.txt"};
-        if(Reload_Everything || Reload_smallFiles || !areFilesExistInDirectory(smallFiles, Proccessed_FilePath))
-        {
-            //DR_iDates, Stock's lifespan in index values starting from (0) the first recorded data date.
-            Intor DateList = Load_Intor(Exo_FilePath + "DateList.txt");
-            Intrix DR_iDates = Dates_to_iDates(DR_Dates, DateList, 1);
-            Save(Proccessed_FilePath + "DR_iDates.txt", DR_iDates);
-            cout << "Created " << Proccessed_FilePath << "DR_iDates.txt\n";
-
-            //iPeriods
-            Intrix iPeriods = Yearly_iPeriods(DateList);
-            Save(Proccessed_FilePath + "iPeriods.txt", iPeriods);
-            cout << "Created " << Proccessed_FilePath << "iPeriods.txt\n";
-
-            //DailyDailyRFR
-            Vector DailyYearlyRFR = Load_Vector(Exo_FilePath + "DailyYearlyRiskFreeReturn.txt");
-            Vector DailyDailyRFR = DailyYearly_to_DailyDaily_Return(DailyYearlyRFR, iPeriods);
-            Save(Proccessed_FilePath + "riskFreeReturn.txt", DailyDailyRFR);
-            cout << "Created " << Proccessed_FilePath << "riskFreeReturn.txt\n";
-
-            //Market Cap
-            int factor = 1; //todo: needs to be 1 atm (Compress_MC)
-            Matrix MarketCap_Mth = Load_Mth_MarketCap(Exo_FilePath + "Mth_PrevCap.txt", factor);
-            Matrix MarketCap_yearly = MarketCap_Monthly_to_Yearly(MarketCap_Mth);
-            Compress_MC(Proccessed_FilePath + "MarketCap_yr.txt", MarketCap_yearly, factor);
-
-            //Inflation factors
-            Vector Inflation = Load_Vector(Exo_FilePath + "Inflation.txt");
-            Vector Inflation_factors = Inflation_Factors_from_yrly_inf(Inflation);
-            Save(Proccessed_FilePath +"Inflation_Factor.txt", Inflation_factors);
-
-            //Other files, usefull for testing
-            //Intrix StockDays = Load_StockDays_from_DR("DR.txt", max);
-            //Compress_DR_StockDays("DR_StockDays.txt", StockDays);    } else {
-        }
-    }
-    else
-        HowToGetStarted();
-}
-void LogFile(string filePath, vector<string> Message)
-{
-    ofstream fil(filePath + "/LogFile.txt");
+    ofstream fil(filePath + "/saveLogFile.txt");
     for(auto& line:Message)
         fil << line << endl;
+}
+void save_logfile(auto start, vector<string> logMessage, string folderName)
+{
+    auto end = std::chrono::system_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end-start;
+    std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+    logMessage.push_back("finished computation at " + string(ctime(&end_time)));
+    logMessage.push_back("elapsed time: " + to_string(elapsed_seconds.count()) + "s");
+    saveLogFile(folderName, logMessage);    //Add more information to logMessage
+    cout << "elapsed time: " + to_string(elapsed_seconds.count()) + "s\n";
+}
+void SaveToCSV(string fn, Matrix A, vector<string> headers)
+{
+    char delim = ';';
+    ofstream fil(fn);
+    int n = headers.size();
+    for (int i = 0; i<n-1; ++i) {
+        fil << headers[i] << delim;
+    }
+    fil << headers[n-1] << endl;
+
+    for (int i = 0; i<A.size(); ++i) {
+        for (int j = 0; j<n-1; ++j)
+            fil << A[i][j] << delim;
+        fil << A[i][n-1] << endl;
+    }
+}
+void SaveToCSV_transposed(string fn, Matrix A, vector<string> headers)
+{
+    remove_char(headers, '/');
+    remove_substring(headers, ".txt");
+
+    char delim = ';';
+    ofstream fil(fn);
+    int n = headers.size();
+    for (int i = 0; i<n-1; ++i) {
+        fil << headers[i] << delim;
+    }
+    fil << headers[n-1] << endl;
+
+    for (int j = 0; j<A[0].size(); ++j){
+        for (int i = 0; i<A.size()-1; ++i)
+            fil << A[i][j] << delim;
+        fil << A[A.size()-1][j] << endl;
+    }
+}
+void Save_TwoDataSet_CSV_transposed(string fn, vector<Matrix> T3, vector<string> headers, vector<string> header_nr)
+{
+    // max_variable = T3[0][0].size() = headers.size()
+
+    remove_char(headers, '/');
+    remove_substring(headers, ".txt");
+
+    char delim = ';';
+    ofstream fil(fn);
+    int max_variable = T3[0].size();
+    int max_observation = T3[0][0].size();
+    int s_max = T3.size();
+
+    for(int s=0; s<s_max; s++)
+        for (int i = 0; i<max_variable; ++i)
+            if(s+1<s_max || i<max_variable-1)
+                fil << headers[i] << header_nr[s] << delim;
+    fil << headers[max_variable-1] << header_nr[s_max-1] << endl;
+
+    for (int i = 0; i<max_observation; ++i)
+    {
+        for(int s = 0; s<s_max; s++)
+            for (int j = 0; j<max_variable; ++j)
+            {
+                if(s<s_max-1 || j<max_variable-1)
+                        fil << T3[s][j][i] << delim;
+                else    fil << T3[s_max-1][j][max_variable-1] << endl;
+            }
+    }
 }

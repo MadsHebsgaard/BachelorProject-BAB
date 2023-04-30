@@ -1,3 +1,4 @@
+//C++ standard functions
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -6,14 +7,17 @@
 #include <algorithm>        //min function
 #include <sys/stat.h>       // For mkdir()
 
+//Our functions
+#include "process.h"        //Data creation functions
+#include "createData.h"     //Create 'Simple' and 'PrePost' data
+#include "backtest.h"       //Backtesting BAB with 'FindPortfolios'
 #include "load.h"           //Load functions
 #include "save.h"           //Save functions
-#include "ui.h"             //UI stuff
 #include "calculations.h"   //any calculation
-#include "testing.h"        //to be used for testing only
-#include "createData.h"     //Create era/period data
 #include "load_output.h"    //Load output files/data
-#include "backtest.h"
+#include "ui.h"             //UI/console functions
+#include "testing.h"        //to be used for testing only
+#include "LegacyCode.h"     //Old code no longer in use
 
 using namespace std;
 using Intor = vector<int>;
@@ -24,36 +28,20 @@ using Tensor3 = vector<Matrix>;
 using Tensor4 = vector<Tensor3>;
 using Tensor5 = vector<Tensor4>;
 
-//Process_Files();
-//Era_Calculations("test", 0.3, 100, 1, DR);
-//Period_Calculations("test", 0.3, 100, DR, 1);
-//Era_PrePost_Calculations("test", 0.4, 100, 1, DR);
-//Era_Period_PrePost_Calculations("test", 0.4, 100, 1, DR);
-
-
-//Tensor5 Data = Load_Era_PrePost_Period("run");
-//Tensor4 Data = Load_Era_n_PrePost_Period("run",1);
-//vector<Matrix> Data = Load_Era_PrePost("Test", 1);
-
-
-
 int main()
 {
-    string Exo_FilePath = "Data/Input/Exo_Files/";
-    string Proccessed_FilePath = "Data/Input/Processed_Files/";
-    Process_Files(false, false);  //TODO: Factor != 1, should not impact ID or number of years in file
+    //Setup_all_files();
 
-    Matrix DR = Load_DR_Compressed("Data/Input/Processed_Files/DR_Compressed.txt", 1000);
+    string incr = "Mly";  //Mly  Dly
+    string Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly;
+    defineFilePaths(incr, Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly);
+    //Process_Files(incr, false, false);
 
-    //Era_Calculations("Run", 0.3, 100, 1, DR);
-    //Period_Calculations("run_test60", 0.3, 100, DR, 1);
-    //Era_PrePost_Calculations("runtest", 0.3, 100, 5, DR);
-    //Era_PrePost_Period_Calculations("run", 0.3, 100, 5, DR);
-    //Tensor5 Data = Load_Era_PrePost_Period("run");
+    Matrix Rs = Load_Rs_Compressed(Proccessed_FilePath_incr + "Rs.txt", -1);
 
-    //Era_Period_PrePost_Calculations("Run", 0.3, 100, 1, DR);
-
-    BackTesting("test", "run");
+    Simple_Calculations(incr, "Run", 0.3, 12, Rs);
+    PrePost_Calculations(incr, "Run", 0.3, Rs);
+    FindPortfolios(incr, "Run", "Run", Rs);
 
     return 0;
 }

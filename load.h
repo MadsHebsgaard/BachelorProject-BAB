@@ -19,9 +19,9 @@ void HowToGetStarted()
     mkdir(exoDirName.c_str());
     cout << "\nYou need to put the following .txt files in the folder \"" << exoDirName << "\":" << endl;
     cout << "   - " << "DR\n";
-    cout << "   - " << "DailyYearlyRiskFreeReturn\n";
-    cout << "   - " << "sp500\n";
-    cout << "   - " << "DateList\n";
+    cout << "   - " << "Dly_YearlyRiskFreeReturn\n";
+    cout << "   - " << "Dly_sp500\n";
+    cout << "   - " << "Dly_DateList\n";
     cout << "   - " << "Mth_PrevCap\n";
 
     cout << "When all the files are present, Run \"Process_Files()\"." << endl << endl;
@@ -116,6 +116,9 @@ Matrix Load_DR(const string& fn, int max)
     string junk;
     int Blanc_r = -2;
 
+    if(max < 1)     max = 40000;
+    //DR.reserve(max, Vector(26000)); // 26000 >= SP500.size()
+
     fil >> junk;
     fil >> junk;
     fil >> junk;
@@ -179,10 +182,10 @@ Matrix Load_DR(const string& fn, int max)
     cout << "Loaded " << i << "/~36150 = " << i / 361.5 << "%.\n";
     return DR;
 }
-Intrix Load_Dates_from_DR(const string& fn)
+Intrix Load_Dates_from_Rs(const string& fn)
 {
     ifstream fil(fn);
-    if(!fil) {  cout << "Load_Dates_from_DR: Could not read the file " << fn << ".";  return Intrix(0);   }
+    if(!fil) {  cout << "Load_Dates_from_Rs: Could not read the file " << fn << ".";  return Intrix(0);   }
     Intrix Dates;
     Intor Stock;
     int IDnew, date, i=0;
@@ -193,7 +196,7 @@ Intrix Load_Dates_from_DR(const string& fn)
     fil >> junk;
     fil >> junk;
     fil >> IDnew;
-    cout << "Load_Dates_from_DR: Loaded 0/~37000 = 0%.\n";
+    cout << "Load_Dates_from_Rs: Loaded 0/~37000 = 0%.\n";
 
     while(!fil.eof())
     {
@@ -212,53 +215,106 @@ Intrix Load_Dates_from_DR(const string& fn)
         Stock.push_back(date);
         Dates.push_back(Stock);
         i++;
-        if(i % 500 == 0) cout << "Load_Dates_from_DR: Loaded " << i << "/~36150 = " << i/370 << "%.\n";
+        if(i % 500 == 0) cout << "Load_Dates_from_Rs: Loaded " << i << "/~36150 = " << i/370 << "%.\n";
     }
-    cout << "Load_Dates_from_DR: Loaded " << i << "/~37000 = " << i / 370 << "%.\n";
+    cout << "Load_Dates_from_Rs: Loaded " << i << "/~37000 = " << i / 370 << "%.\n";
     return Dates;
 }
-Matrix Load_DR_Compressed(const string& fn, int max)
+Matrix Load_DR_Compressed_resize(const string& fn, int max)
 {
     ifstream fil(fn);
-    if(!fil) {  cout << "Load_DR_Compressed: Could not read the file " << fn << ".";  return Matrix(0);   }
+    if(!fil) {  cout << "Load_Rs_Compressed: Could not read the file " << fn << ".";  return Matrix(0);   }
 
-    Vector Stock;
-    Matrix DR;
+    if(max < 1 || max > 40000)     max = 40000;
+    Matrix DR(max, Vector(26000));
 
-    DR.reserve(40000);
     int n, i=0;
-
     while(fil >> n)
     {
-        Stock = Vector(n);
+        DR[i].resize(n);
         for (int j = 0; j < n; ++j)
         {
-            fil >> Stock[j];
+            fil >> DR[i][j];
         }
-        DR.push_back(Stock);
-        if(i % 500 == 0)    cout << "ID = " << Stock[0] << " i = " << i << endl;
+        if(i % 500 == 0)    cout << "ID = " << DR[i][0] << " i = " << i << "\n";
         i++;
         if (i == max) break;
     }
-    cout << "Load_DR_Compressed: Sucssesfully loaded " << i << " stocks to DR from " << fn << ".\n";
+    if(max == 40000)    DR.resize(i);
+    cout << "Load_Rs_Compressed: Sucssesfully loaded " << i << " stocks to DR from " << fn << ".\n";
     return DR;
+}
+Matrix Load_DR_Compressed_GPT(const string& fn, int max)
+{
+    ifstream fil(fn);
+    if (!fil) {
+        cout << "Load_Rs_Compressed: Could not read the file " << fn << ".";
+        return Matrix(0);
+    }
+
+    if (max<1 || max>40000) max = 40000;
+    Matrix DR(max, Vector());
+    for (auto& row: DR) row.reserve(26000);
+
+    int n, i = 0;
+    while (fil >> n) {
+        auto& row = DR[i];
+        row.resize(n);
+        for (int j = 0; j<n; ++j) {
+            fil >> row[j];
+        }
+        if (i%500==0) cout << "ID = " << row[0] << " i = " << i << '\n';
+        ++i;
+        if (i==max) break;
+    }
+    if (max==40000) DR.resize(i);
+    cout << "Load_Rs_Compressed: Sucssesfully loaded " << i << " stocks to DR from " << fn << ".\n";
+    return DR;
+}
+
+Matrix Load_Rs_Compressed(const string& fn, int max)
+{
+    ifstream fil(fn);
+    if(!fil) {  cout << "Load_Rs_Compressed: Could not read the file " << fn << ".";  return Matrix(0);   }
+
+    //Rs dimensions
+    int maxN = 26000;
+    if (fn.find("Mly") != string::npos || fn.find("mly") != string::npos)
+        maxN = 1200;
+    Matrix Rs(40000, Vector(maxN));
+
+    int n, i=0;
+    while(fil >> n)
+    {
+        Rs[i].resize(n);
+        for (int j = 0; j < n; ++j)
+            fil >> Rs[i][j];
+        if(i % 500 == 0)    cout << "ID = " << Rs[i][0] << " i = " << i << endl;  //todo: Fix
+        i++;
+        if (i == max) break;
+    }
+    Rs.resize(i);
+    cout << "Load_Rs_Compressed: Sucssesfully loaded " << i << " stocks to Rs from " << fn << ".\n";
+    return Rs;
 }
 Matrix Load_MC_Compressed(const string& fn)
 {
     ifstream fil(fn);
-    if(!fil) {  cout << "Load_DR_Compressed: Could not read the file " << fn << ".";  return Matrix(0);   }
-    Matrix MC;
+    if(!fil) {  cout << "Load_MC_Compressed: Could not read the file " << fn << ".";  return Matrix(0);   }
+    Matrix MC(40000, Vector(1200));
 
+    int i=0;
     int n;
     while(fil >> n)
     {
-        Vector stock(n);
+        MC[i].resize(n);
         for (int j = 0; j < n; ++j)
         {
-            fil >> stock[j];
+            fil >> MC[i][j];
         }
-        MC.push_back(stock);
+        i++;
     }
+    MC.resize(i);
     return MC;
 }
 Intrix Load_Intrix(const string& fn, int max)
@@ -375,7 +431,7 @@ Intrix Load_StockDays_Compressed(const string& fn, bool With_Id, int max)
     cout << "Sucssesfully loaded " << i << " stocks to StockDays.\n";
     return StockDays;
 }
-Matrix Load_Mth_MarketCap(string fn, int Factor)
+Matrix Load_Mly_MarketCap(string fn, int Factor)
 {
     ifstream fil(fn);
     if(!fil) {  cout << "Could not read the file " << fn << ".\n";  return Matrix(0);   }
@@ -434,49 +490,62 @@ Matrix Load_Mth_MarketCap(string fn, int Factor)
     }
     return MC;
 }
-void Load_Data(Matrix& DR, double& max_ratio, int& minTradingDays, vector<string>& logMessage
+void Load_Data(Matrix& Rs, double& max_ratio, int& minTradingDays, vector<string>& logMessage
                , string& Exo_FilePath, string& Proccessed_FilePath, Matrix& MC, Vector& Inflation_Factor
                , Intrix& iDates, Vector& sp500, Vector& riskFree, Intor& Dates, Intrix& iPeriods
-               , string& folderName, string& methodName, vector<string>& fileNames)
+               , string& folderName, string& methodName, vector<string>& fileNames, string incr)
 {
+
     //File paths
-    Exo_FilePath = "Data/Input/Exo_Files/";
-    Proccessed_FilePath = "Data/Input/Processed_Files/";
+    string Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly;
+    defineFilePaths(incr, Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly);
+
     fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt", "/infl_factor.txt", "/year.txt"};
 
     //Log messages
-    logMessage = {"max_ratio = "+to_string(max_ratio)};
-    logMessage.push_back("minTradingDays = "+to_string(minTradingDays));
-    logMessage.push_back("DR.size() = "+to_string(DR.size()));
+    logMessage = {"incr = "+incr};
+    logMessage.push_back("max_ratio = "+to_string(max_ratio));
+    if (methodName != "PrePost")    logMessage.push_back("minTradingDays = "+formatNumber(minTradingDays));
+    logMessage.push_back("Rs.size() = "+formatNumber(Rs.size()));
+    //string elementsRs = formatNumber(countOfElements(Rs)-Rs.size());  //Might be too slow
+    //string elementsRs_ny = formatNumber(countOfElements(Rs)-Rs.size());  //Might be too slow
+    //logMessage.push_back("DR_ny.size() = "+formatNumber(Rs.size()));
 
-    //DR with condition for inclusion
-    DR = Edit_DR(DR, max_ratio, minTradingDays);
-    logMessage.push_back("DR.size() = "+to_string(DR.size()));
+
+    //Rs with condition for inclusion
+    //Rs = Edit_DR(Rs, max_ratio, minTradingDays);    //Dly problem when TD is low and R = 1. May cause some bias, so turned off
+
 
     //Market Cap
-    MC = Load_MC_Compressed("Data/Input/Processed_Files/MarketCap_yr.txt");
-    MC = Remove_Missing_ID(MC, Matrix_Column(DR, 0));
+    MC = Load_MC_Compressed(Proccessed_Yly + "pMC.txt");
+    MC = Remove_Missing_ID(MC, Matrix_Column(Rs, 0));
 
     //Inflation factor
-    Inflation_Factor = Load_Vector("Data/Input/Processed_Files/Inflation_Factor.txt");
+    Inflation_Factor = Load_Vector(Proccessed_Yly + "Inflation_Factor.txt");
 
-    //iDates with same stocks as DR
-    iDates = Load_Intrix(Proccessed_FilePath+"DR_iDates.txt", -1);
-    iDates = Remove_Missing_ID(iDates, Matrix_Column(DR, 0));
+    //iDates with same stocks as Rs
+    iDates = Load_Intrix(Proccessed_FilePath_incr + "Rs_iDates.txt", -1);
+    iDates = Remove_Missing_ID(iDates, Matrix_Column(Rs, 0));
 
     //Load sp500 and riskFree returns & SP500 dates
-    sp500 = Load_Vector(Exo_FilePath+"sp500.txt");
-    riskFree = Load_Vector(Proccessed_FilePath+"riskFreeReturn.txt");
-    Dates = Load_Intor(Exo_FilePath+"DateList.txt");
+    sp500 = Load_Vector(Proccessed_FilePath_incr + "sp500.txt");
+    riskFree = Load_Vector(Proccessed_FilePath_incr + "riskFreeReturn.txt");
+    Dates = Load_Intor(Proccessed_FilePath_incr + "DateList.txt");
 
     //Load iPeriods and create Era_List
-    iPeriods = Load_Intrix(Proccessed_FilePath+"iPeriods.txt", -1);
+    iPeriods = Load_Intrix(Proccessed_FilePath_incr + "iPeriods.txt", -1);
+    logMessage.push_back("Data period: " + formatDate(Dates[iPeriods[0][0]]) + " - " + formatDate(Dates[iPeriods[iPeriods.size()-1][1]]));
+
 
     //Create files and folderName = folderPath
+    //folderName = incr + "_" + folderName;
+    mkdir("Data");
     mkdir("Data/Output");
-    cout << methodName << "_Calculations: Files was Loaded for \"" << folderName << "\".\n\n";
     mkdir(("Data/Output/" + methodName).c_str());
-    folderName = "Data/Output/" + methodName + "/" + folderName;
+    mkdir(("Data/Output/" + methodName+"/"+incr).c_str());
+    folderName = "Data/Output/"+methodName+"/"+incr+"/"+ folderName;
     std::filesystem::remove_all(folderName.c_str());
     mkdir(folderName.c_str());
+
+    cout << methodName << "_Calculations: Files was Loaded for \"" << folderName << "\".\n\n";
 }

@@ -11,7 +11,22 @@ using Matrix = vector<vector<double>>;
 #pragma once
 #include "load.h"
 
-int Find_date_integer(int date, Intor& Date_list);
+
+//Vector testPort11  = PortfolioReturns({10006}, DR_iDates, iPeriod[1], DR);
+//Vector testPort12  = PortfolioReturns({10022}, DR_iDates, iPeriod[1], DR);
+//Vector testPort2  = PortfolioReturns({10006, 10022}, DR_iDates, iPeriod[1], DR);
+//Vector testPort3  = PortfolioReturns({10006, 10022, 10030}, DR_iDates, iPeriod[1], DR);
+//Save("Data/temp_10006_10022_1.txt" , testPort2);
+//Save("Data/temp_10006_1.txt" , testPort11);
+//Save("Data/temp_10022_1.txt" , testPort12);
+
+//string name = "run";
+//PrePost_Calculations(name, 0.3, 100, DR);
+//FindPortfolios(name, name, DR);
+
+
+/*
+int Dly_Find_iDate(int date, Intor& Date_list);
 
 
 void day_est_checker(int max)
@@ -25,14 +40,14 @@ void day_est_checker(int max)
     for (int i = 0; i < max; ++i)
     {
         True_date = Dates[i][1];
-        Est_date = SP500_Dates[Find_date_integer(Dates[i][1], SP500_Dates)];
+        Est_date = SP500_Dates[Dly_Find_iDate(Dates[i][1], SP500_Dates)];
         if(True_date < Est_date)    cout << True_date << " <1 " << Est_date << ",  i = " << i << endl;
     }
 
     for (int i = 0; i < max; ++i)
     {
         True_date = Dates[i][2];
-        Est_date = SP500_Dates[Find_date_integer(Dates[i][2], SP500_Dates)];
+        Est_date = SP500_Dates[Dly_Find_iDate(Dates[i][2], SP500_Dates)];
         if(True_date < Est_date)    cout << True_date << " <2 " << Est_date << ",  i = " << i << endl;
     }
 
@@ -41,14 +56,14 @@ void day_est_checker(int max)
     for (int i = 0; i < max; ++i)
     {
         True_date = Dates[i][1];
-        Est_date = SP500_Dates[Find_date_integer(Dates[i][1], SP500_Dates)];
+        Est_date = SP500_Dates[Dly_Find_iDate(Dates[i][1], SP500_Dates)];
         if(True_date > Est_date)    cout << True_date << " >1 " << Est_date << ",  i = " << i << endl;
     }
 
     for (int i = 0; i < max; ++i)
     {
         True_date = Dates[i][2];
-        Est_date = SP500_Dates[Find_date_integer(Dates[i][2], SP500_Dates)];
+        Est_date = SP500_Dates[Dly_Find_iDate(Dates[i][2], SP500_Dates)];
         if(True_date > Est_date)    cout << True_date << " >2 " << Est_date << ",  i = " << i << endl;
     }
 }
@@ -84,18 +99,19 @@ void Date_Checker(int max)
         }
     }
 }
+ */
 /*
 void OldTestCalculations(int max, double max_ratio, int minTradingDays)
 {
     //DR with condition for inclusion
-    Matrix DR = Load_DR_Compressed("DR_Compressed.txt", max);
+    Matrix DR = Load_Rs_Compressed("DR_Compressed.txt", max);
     Matrix DR_ny = Edit_DR(DR,max_ratio, minTradingDays);
 
     Intrix iPeriods = Load_Intrix("Yearly_iPeriods_1926_1949.txt", -1);
     //Intrix iPeriods = Load_Intrix("Yearly_iPeriods_1950_1973.txt", -1);
     //Intrix iPeriods = Load_Intrix("Yearly_iPeriods_1974_1997.txt", -1);
     //Intrix iPeriods = Load_Intrix("Yearly_iPeriods_1998_2021.txt", -1);
-    //Intrix iPeriods = Load_Intrix("Yearly_iPeriods.txt", -1);
+    //Intrix iPeriods = Load_Intrix("x_Periods.txt", -1);
 
     Vector sp500 = Load_Vector("sp500.txt");
     Vector riskFree = Load_Vector("DailyRiskFreeReturn.txt");
@@ -135,7 +151,7 @@ void OldTestCalculations(int max, double max_ratio, int minTradingDays)
 void TestCalculations(string folderName, int max, double max_ratio, int minTradingDays, int n_periods)
 {
     //DR with condition for inclusion
-    Matrix DR = Load_DR_Compressed("DR_Compressed.txt", max);
+    Matrix DR = Load_Rs_Compressed("DR_Compressed.txt", max);
     Matrix DR_ny = Edit_DR(DR,max_ratio,minTradingDays);
 
     //iDates with same stocks as DR_ny
@@ -153,7 +169,7 @@ void TestCalculations(string folderName, int max, double max_ratio, int minTradi
     Matrix akk_return(n_periods,Vector(0)), akk_sp500(n_periods,Vector(0)), akk_riskFree(n_periods,Vector(0));
     Matrix beta_alpha_return;
 
-    Intrix iPeriods = Load_Intrix("Yearly_iPeriods.txt", -1);
+    Intrix iPeriods = Load_Intrix("x_Periods.txt", -1);
     vector<Intrix> Era_List = SplitPeriods(iPeriods, n_periods, true);
 
     folderName = "Output_Data/" + folderName;
@@ -205,9 +221,9 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
     iDates = Remove_Missing_ID(iDates, Matrix_Column(DR_ny, 0));
 
     //Load sp500 and riskFree returns & SP500 dates
-    Vector sp500 = Load_Vector(Exo_FilePath+"sp500.txt");
+    Vector sp500 = Load_Vector(Exo_FilePath+"Dly_sp500.txt");
     Vector riskFree = Load_Vector(Proccessed_FilePath+"riskFreeReturn.txt");
-    Intor Dates = Load_Intor(Exo_FilePath+"DateList.txt");
+    Intor Dates = Load_Intor(Exo_FilePath+"Dly_DateList.txt");
 
     //Load iPeriods and create Era_List
     Intrix iPeriods = Load_Intrix(Proccessed_FilePath+"iPeriods.txt", -1);
@@ -252,7 +268,7 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
             }
         }
     }
-    LogFile(folderName, logMessage);    //Add more information to logMessage
+    saveLogFile(folderName, logMessage);    //Add more information to logMessage
 }
  */
 /*
@@ -265,7 +281,7 @@ for (int i = 0; i < 3; ++i)
 }
 */  // vector || pushback
 /*
-Matrix Load_DR_Compressed(string fn)
+Matrix Load_Rs_Compressed(string fn)
 {
     ifstream fil(fn);
     if(!fil) {  cout << "Could not read the file " << fn << ".";  return Matrix(0);   }
@@ -282,7 +298,7 @@ Matrix Load_DR_Compressed(string fn)
 }
 */  // not using || pushback
 /*
-Matrix Load_DR_Compressed(string fn)
+Matrix Load_Rs_Compressed(string fn)
 {
     ifstream fil(fn);
     if(!fil) {  cout << "Could not read the file " << fn << ".";  return Matrix(0);   }

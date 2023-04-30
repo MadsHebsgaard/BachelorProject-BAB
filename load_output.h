@@ -93,7 +93,6 @@ vector<vector<vector<Matrix>>> Load_Era_PrePost_Period(string runName)
 }
 vector<vector<vector<Matrix>>> Load_Era_Period_PrePost(string runName, vector<string> fileNames)
 {
-
     //vector<string> fileNames = {"/PERMNO.txt", "/beta.txt", "/alpha.txt", "/akk_return.txt", "/akk_sp500.txt", "/akk_riskFree.txt"};
 
     vector<string> prePostName = {"/Pre_Period", "/Period"};
@@ -121,6 +120,25 @@ vector<vector<vector<Matrix>>> Load_Era_Period_PrePost(string runName, vector<st
                         Data[eraNr][Period][prePost][fileNr].push_back(number);
                     }
                 }
+            }
+        }
+    }
+    return Data;
+}
+Tensor3 Load_prePost(string folderName, vector<string> infoFiles)
+{
+    Tensor3 Data(2, Matrix(infoFiles.size()));
+    vector<string> prePostName = {"/Pre_Period", "/Period"};
+    string folderPath = "Data/Output/PrePost/" + folderName;
+    for (int prePost = 0; prePost < 2; prePost++)
+    {
+        string prePostPath = folderPath + prePostName[prePost];
+        for (int infoNr = 0; infoNr < infoFiles.size(); ++infoNr)
+        {
+            Vector v = Load_Vector(prePostPath + infoFiles[infoNr]);
+            Data[prePost][infoNr].resize(v.size());
+            for (int i = 0; i<v.size(); ++i) {
+                Data[prePost][infoNr][i] = v[i];
             }
         }
     }
