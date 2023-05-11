@@ -63,7 +63,7 @@ void day_est_checker(int max)
     for (int i = 0; i < max; ++i)
     {
         True_date = Dates[i][2];
-        Est_date = SP500_Dates[Dly_Find_iDate(Dates[i][2], SP500_Dates)];
+        Est_date = SP500_Dates[Find_iDate(Dates[i][2], SP500_Dates)];
         if(True_date > Est_date)    cout << True_date << " >2 " << Est_date << ",  i = " << i << endl;
     }
 }

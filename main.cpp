@@ -32,7 +32,7 @@ using Tensor4 = vector<Tensor3>;
 //(proccesed files) Add yly sp500
 //(backtesting)     Antal aktier i hver portefølge start og slut
 //(Setup_all_files) Fix mly iPeriods
-
+//Check for DR
 
 int main()
 {
@@ -41,8 +41,7 @@ int main()
     string Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly;
     defineFilePaths(incr, Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly);
 
-    Setup_all_files();
-
+    //Setup_all_files();
 
     double max_ratio = 0.4;
     int minTradingDays = 10;
@@ -50,7 +49,7 @@ int main()
     Matrix Rs = Load_Rs_Compressed(Proccessed_FilePath_incr + "Rs.txt", -1);
     Rs = Edit_DR(Rs, max_ratio, minTradingDays);    //Dly problem when TD is low and R = 1. May cause some bias, so turned off
 
-    string filename = "run";
+    string filename = "run2";
     Simple_run(incr, filename, minTradingDays, Rs);
     PrePost_run(incr, filename, Rs);
 

@@ -209,7 +209,7 @@ void BackTest_run(string incr, string folderName, string dataFolderName, Matrix 
     vector<string> headers = {"lowReturn", "highReturn", "allReturn", "lowPortBeta_pre", "highPortBeta_pre", "allPortBeta_pre", "dates"};
 
     //Add additional pre-known timeseries (s500, riskFree)
-    Add_Aditinals(LHA_PortData, headers, Slow_Find_iDate(LHA_PortData[6][0], Dates), {sp500, riskFree}, {"sp500", "riskFree"});
+    Add_Aditinals(LHA_PortData, headers, Find_iDate(LHA_PortData[6][0], Dates), {sp500, riskFree}, {"sp500", "riskFree"});
 
     //Saving CSV
     Save_CSV(folderName+"/BackTest" + "_" + method + "_CSV.txt", LHA_PortData, headers);
