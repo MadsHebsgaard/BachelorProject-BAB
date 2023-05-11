@@ -1,15 +1,25 @@
-#pragma once
 
 #include <vector>
 #include <iostream>
 #include <fstream>
 #include "calculations.h"
 
+#pragma once
+
 using namespace std;
 using Intor = vector<int>;
 using Intrix = vector<vector<int>>;
 using Vector = vector<double>;
 using Matrix = vector<vector<double>>;
+
+void defineFilePaths(string& incr, string& Exo_FilePath, string& Proccessed_FilePath, string& Proccessed_FilePath_inc, string& Proccessed_Dly, string& Proccessed_Mly, string& Proccessed_Yly);
+string formatDate(int dateInt);
+string formatNumber(int number);
+Vector Matrix_Column(Matrix A, int j);
+Intrix Remove_Missing_ID(Intrix A, Vector v);
+Matrix Remove_Missing_ID(Matrix A, Vector v);
+
+Matrix Edit_DR(Matrix A, double max_ratio, int minTradingDays);
 
 void HowToGetStarted()
 {
@@ -38,6 +48,7 @@ Vector Load_Vector(const string& fn)
         fil >> e;
         v.push_back(e);
     }
+    fil.close();
     return v;
 }
 Matrix Load_Matrix(const string& fn)
@@ -58,6 +69,7 @@ Matrix Load_Matrix(const string& fn)
     {
         for(int j=0; j<n; j++)  fil >> A[i][j];
     }
+    fil.close();
     return A;
 }
 Intor Load_Intor(const string& fn)
@@ -72,6 +84,7 @@ Intor Load_Intor(const string& fn)
         v.push_back(e);
     }
     //cout << "\nLoad_Intor: Sucssesfully loaded " << v.size() << " elements from " << fn << " to Intor.\n";
+    fil.close();
     return v;
 }
 Intrix Load_Dates(const string& fn)
@@ -103,6 +116,7 @@ Intrix Load_Dates(const string& fn)
         i++;
     }
     //cout << "All " << i << " dates was loaded sucsessfully.";
+    fil.close();
     return A;
 }
 Matrix Load_DR(const string& fn, int max)
@@ -130,18 +144,23 @@ Matrix Load_DR(const string& fn, int max)
     {
         Stock = Vector(0);
         Stock.push_back(IDnew);
+        bool FirstRealReturn = true;
 
         {
             if(fil.eof()) break;
             fil >> date;
             fil >> r;
-            if(r < 10000)   fil >> IDnew;
+            if(r < 10000)
+            {
+                fil >> IDnew;
+                FirstRealReturn = false;
+            }
             else
             {
                 IDnew = r;
                 r = Blanc_r;     //When blanc/no return
             }
-            Stock.push_back(r);
+            if (!FirstRealReturn) Stock.push_back(r);
         }
         while(true)
         {
@@ -174,14 +193,17 @@ Matrix Load_DR(const string& fn, int max)
             }
             Stock.push_back(r);
         }
-        DR.push_back(Stock);
+        if(Stock.size() > 1)    DR.push_back(Stock); //Not just ID
         i++;
         if(i % 500 == 0) cout << "Loaded " << i << "/~36150 = " << i/361.5 << "%.\n";
         if(i==max)   break;
     }
     cout << "Loaded " << i << "/~36150 = " << i / 361.5 << "%.\n";
+    fil.close();
     return DR;
 }
+
+/*
 Intrix Load_Dates_from_Rs(const string& fn)
 {
     ifstream fil(fn);
@@ -201,23 +223,92 @@ Intrix Load_Dates_from_Rs(const string& fn)
     while(!fil.eof())
     {
         Stock = Intor(0);
+        bool FirstRealReturn = true;
+
         fil >> date;
-        Stock.push_back(IDnew);
-        Stock.push_back(date);
+        //Stock.push_back(IDnew);
+        //Stock.push_back(date);
         while(!fil.eof())
         {
             fil >> r;
-            if(r < 10000)   fil >> IDnew;
-            else            IDnew = r;
-            if(IDnew != Stock[0])   break;
+            if(r < 10000) {
+                Stock.push_back(IDnew);
+                Stock.push_back(date);
+                FirstRealReturn = false;
+                fil >> IDnew;
+            }
+            else {
+                if(!FirstRealReturn)
+                {
+                    Stock.push_back(IDnew);
+                    Stock.push_back(date);
+                }
+                IDnew = r;
+            }
+            if(!FirstRealReturn)
+                if(IDnew != Stock[0])   break;
             fil >> date;
         }
-        Stock.push_back(date);
+        if(!FirstRealReturn)
+        {
+            Stock.push_back(date);
+            Dates.push_back(Stock);
+        }
+        i++;
+        if(i % 500 == 0) cout << "Load_Dates_from_Rs: Loaded " << i << "/~36150 = " << i/370 << "%.\n";
+    }
+    cout << "Load_Dates_from_Rs: Loaded " << i << "/~37000 = " << i / 370 << "%.\n";
+    return Dates;
+}
+ */
+
+Intrix Load_Dates_from_Rs(const string& fn)
+{
+    ifstream fil(fn);
+    if(!fil) {  cout << "Load_Dates_from_Rs: Could not read the file " << fn << ".";  return Intrix(0);   }
+    Intrix Dates;
+    Intor Stock;
+    int IDnew, date, real_Date, i=0;
+    double r;
+    string junk;
+
+    fil >> junk;
+    fil >> junk;
+    fil >> junk;
+    fil >> IDnew;
+    cout << "Load_Dates_from_Rs: Loaded 0/~37000 = 0%.\n";
+
+    while(!fil.eof())
+    {
+        Stock = Intor(0);
+        bool FirstRealReturn = true;
+        fil >> date;
+
+        while(!fil.eof())
+        {
+            fil >> r;
+            if(r < 10000)   {
+                real_Date = date;
+                if(FirstRealReturn)
+                {
+                    FirstRealReturn = false;
+                    Stock.push_back(IDnew);
+                    Stock.push_back(real_Date);
+                }
+                fil >> IDnew;
+            }
+            else            IDnew = r;
+            if(!FirstRealReturn)
+                if(IDnew != Stock[0])   break;
+            fil >> date;
+        }
+        Stock.push_back(real_Date);
         Dates.push_back(Stock);
         i++;
         if(i % 500 == 0) cout << "Load_Dates_from_Rs: Loaded " << i << "/~36150 = " << i/370 << "%.\n";
     }
     cout << "Load_Dates_from_Rs: Loaded " << i << "/~37000 = " << i / 370 << "%.\n";
+    fil.close();
     return Dates;
 }
 Matrix Load_DR_Compressed_resize(const string& fn, int max)
@@ -242,6 +333,7 @@ Matrix Load_DR_Compressed_resize(const string& fn, int max)
     }
     if(max == 40000)    DR.resize(i);
     cout << "Load_Rs_Compressed: Sucssesfully loaded " << i << " stocks to DR from " << fn << ".\n";
+    fil.close();
     return DR;
 }
 Matrix Load_DR_Compressed_GPT(const string& fn, int max)
@@ -269,6 +361,7 @@ Matrix Load_DR_Compressed_GPT(const string& fn, int max)
     }
     if (max==40000) DR.resize(i);
     cout << "Load_Rs_Compressed: Sucssesfully loaded " << i << " stocks to DR from " << fn << ".\n";
+    fil.close();
     return DR;
 }
 
@@ -295,6 +388,7 @@ Matrix Load_Rs_Compressed(const string& fn, int max)
     }
     Rs.resize(i);
     cout << "Load_Rs_Compressed: Sucssesfully loaded " << i << " stocks to Rs from " << fn << ".\n";
+    fil.close();
     return Rs;
 }
 Matrix Load_MC_Compressed(const string& fn)
@@ -315,6 +409,7 @@ Matrix Load_MC_Compressed(const string& fn)
         i++;
     }
     MC.resize(i);
+    fil.close();
     return MC;
 }
 Intrix Load_Intrix(const string& fn, int max)
@@ -337,6 +432,7 @@ Intrix Load_Intrix(const string& fn, int max)
         cout << "Load_Intrix: Sucessfully loaded (" << A.size() << " x " << A[0].size() << ") Intrix to " << fn << ".\n";
     else    cout << "Load_Intrix: Sucssesfully loaded (" << A.size() << " x X) to Intrix.\n";
 */
+    fil.close();
     return A;
 }
 Intrix Load_StockDays_from_DR(const string& fn, int max)
@@ -401,6 +497,7 @@ Intrix Load_StockDays_from_DR(const string& fn, int max)
         if(i == max)   break;
     }
     cout << "Loaded " << i << "/36148 = " << i / 361.48 << "%.\n";
+    fil.close();
     return Stockdays;
 }
 Intrix Load_StockDays_Compressed(const string& fn, bool With_Id, int max)
@@ -429,6 +526,7 @@ Intrix Load_StockDays_Compressed(const string& fn, bool With_Id, int max)
         if (i == max) break;
     }
     cout << "Sucssesfully loaded " << i << " stocks to StockDays.\n";
+    fil.close();
     return StockDays;
 }
 Matrix Load_Mly_MarketCap(string fn, int Factor)
@@ -488,33 +586,27 @@ Matrix Load_Mly_MarketCap(string fn, int Factor)
         fil >> date;
         if(fil.eof())   {MC.push_back(Stock); break;}
     }
+    fil.close();
     return MC;
 }
-void Load_Data(Matrix& Rs, double& max_ratio, int& minTradingDays, vector<string>& logMessage
-               , string& Exo_FilePath, string& Proccessed_FilePath, Matrix& MC, Vector& Inflation_Factor
+void Load_Data(Matrix& Rs, vector<string>& logMessage, Matrix& MC, Vector& Inflation_Factor
                , Intrix& iDates, Vector& sp500, Vector& riskFree, Intor& Dates, Intrix& iPeriods
                , string& folderName, string& methodName, vector<string>& fileNames, string incr)
 {
 
     //File paths
-    string Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly;
+    string Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly, Proccessed_FilePath, Exo_FilePath;
     defineFilePaths(incr, Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly);
 
     fileNames = {"/beta.txt", "/alpha.txt", "/akk_return.txt", "/PERMNO.txt", "/akk_sp500.txt", "/akk_riskFree.txt", "/MarketCap.txt", "/infl_factor.txt", "/year.txt"};
+    //fileNames = {"beta", "alpha", "akk_return", "PERMNO", "akk_sp500", "akk_riskFree", "MarketCap", "infl_factor", "year"};
 
     //Log messages
     logMessage = {"incr = "+incr};
-    logMessage.push_back("max_ratio = "+to_string(max_ratio));
-    if (methodName != "PrePost")    logMessage.push_back("minTradingDays = "+formatNumber(minTradingDays));
     logMessage.push_back("Rs.size() = "+formatNumber(Rs.size()));
     //string elementsRs = formatNumber(countOfElements(Rs)-Rs.size());  //Might be too slow
     //string elementsRs_ny = formatNumber(countOfElements(Rs)-Rs.size());  //Might be too slow
     //logMessage.push_back("DR_ny.size() = "+formatNumber(Rs.size()));
-
-
-    //Rs with condition for inclusion
-    //Rs = Edit_DR(Rs, max_ratio, minTradingDays);    //Dly problem when TD is low and R = 1. May cause some bias, so turned off
-
 
     //Market Cap
     MC = Load_MC_Compressed(Proccessed_Yly + "pMC.txt");
@@ -535,7 +627,6 @@ void Load_Data(Matrix& Rs, double& max_ratio, int& minTradingDays, vector<string
     //Load iPeriods and create Era_List
     iPeriods = Load_Intrix(Proccessed_FilePath_incr + "iPeriods.txt", -1);
     logMessage.push_back("Data period: " + formatDate(Dates[iPeriods[0][0]]) + " - " + formatDate(Dates[iPeriods[iPeriods.size()-1][1]]));
-
 
     //Create files and folderName = folderPath
     //folderName = incr + "_" + folderName;

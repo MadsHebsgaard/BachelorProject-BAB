@@ -178,7 +178,7 @@ void Period_Calculations(string folderName, double max_ratio, int minTradingDays
     for (int period = skipFirst_n; period < iPeriods.size(); ++period)
     {
         //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
-        Data = Beta_Alpha_Calculate(DR, MC, iDates, sp500, riskFree, Dates, iPeriods[period], Inflation_Factor[period], 130, false);
+        Data = Calculate_Performance(DR, MC, iDates, sp500, riskFree, Dates, iPeriods[period], Inflation_Factor[period], 130, false);
 
         // Creating a directory and files for the period
         string periodDirName = dirName + "_" + to_string(period + 1 - skipFirst_n);
@@ -280,7 +280,7 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
         {
             //if(Era == 0 && eraPeriod == 0) continue;
             //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
-            vector<Matrix> twoPeriod_Data = TwoPeriod_Calc(DR, MC, iDates, sp500, riskFree, Dates, iPeriods[periodNr-1], iPeriods[periodNr], {Inflation_Factor[periodNr-1], Inflation_Factor[periodNr]});
+            vector<Matrix> twoPeriod_Data = PrePost_Performance(DR, MC, iDates, sp500, riskFree, Dates, iPeriods[periodNr-1], iPeriods[periodNr], {Inflation_Factor[periodNr-1], Inflation_Factor[periodNr]});
 
             //Create dirs and then files
             string periodPre_DirName = preDirName + "/Period_" + to_string(eraPeriod);
@@ -504,5 +504,432 @@ void Load_Data(Matrix& DR, double& max_ratio, int& minTradingDays, vector<string
     mkdir(folderName.c_str());
 }
 
+ void old_BackTest(string incr, string folderName, string dataFolderName, Matrix Rs)
+{
+    //todo: Creating the BAB portfolio as if it was a stock (ETF) with daily returns
+    auto start = std::chrono::system_clock::now();
+
+    //Loading data
+    string methodName = "BackTest_run";
+    vector<string> logMessage, fileNames;
+    Matrix MC;
+    Vector Inflation_Factor, sp500, riskFree;
+    Intrix iPeriods, iDates;
+    Intor Dates;
+    Load_Data(Rs, logMessage, MC, Inflation_Factor, iDates, sp500, riskFree, Dates, iPeriods, folderName, methodName, fileNames, incr);
+
+    //Load data from prePost method
+    vector <string> infoFiles = {"/year.txt", "/beta.txt", "/PERMNO.txt"};
+    Tensor3 Data = Load_prePost(incr+"/"+dataFolderName, infoFiles);
+
+    //Initiate readability variables
+    int year = 0, beta = 1, PERMNO = 2;
+    int pre = 0, post = 0;
+    int low = 0, high = 1, all=2;
+
+    //Low and high beta cutoff for portfolios
+    double betaLow = 1, betaHigh = 1;
+
+    //Initiate data variables
+    int n_LHA = 3;
+    int yrMin = Data[post][year][0];
+    int yrMax = Data[post][year][Data[post][year].size()-1];
+    vector<Intrix> ID_LHA(yrMax-yrMin+1, Intrix(3, Intor(0)));
+    Matrix beta_LHA(yrMax-yrMin+1, Vector(n_LHA,0));    //Low, High and All beta portfolio
+    Vector (yrMax-yrMin+1);
+
+
+    //Calculate which stocks should go in each (low/high beta) portfolio
+    int st = 0;
+    for (int yr = yrMin; yr <= yrMax; ++yr)
+    {
+        int iyr = yr-yrMin;
+        while(Data[post][year][st] == yr)
+        {
+            //calculate beta
+            double hist_Beta = Data[pre][beta][st];
+
+            //Add stock to portfolio with all stocks regardless of beta
+            ID_LHA[iyr][all].push_back(Data[pre][PERMNO][st]);
+            beta_LHA[iyr][all] += est_period_beta(hist_Beta);
+
+            //Low beta portefolio
+            if(hist_Beta < betaLow)
+            {
+                ID_LHA[iyr][low].push_back(Data[pre][PERMNO][st]);
+                beta_LHA[iyr][low] += est_period_beta(hist_Beta);
+            }
+                //High beta portefolio
+            else if(hist_Beta > betaHigh)
+            {
+                ID_LHA[iyr][high].push_back(Data[pre][PERMNO][st]);
+                beta_LHA[iyr][high] += est_period_beta(hist_Beta);
+            }
+            st++;   //next stock
+        }
+        //Average beta in each portefolio
+        for (int LHA = 0; LHA<n_LHA; ++LHA)
+            beta_LHA[iyr][LHA] /= ID_LHA[iyr][LHA].size();
+    }
+
+    Matrix LHA_return_beta_date(2*n_LHA+1, Vector(0));
+    //Creating portfolios
+    for (int iyr = 1; iyr <= yrMax-yrMin+1; ++iyr)
+    {
+        //Calculating period length
+        int periodLength = iPeriods[iyr][1]-iPeriods[iyr][0]+1;
+
+        for (int LHA = 0; LHA<2*n_LHA+1; ++LHA)
+        {
+            if(LHA < n_LHA)             //Calculating returns
+                push_back(LHA_return_beta_date[LHA], Portfolio_Returns(ID_LHA[iyr-1][LHA], iDates, iPeriods[iyr], Rs));
+
+            else if(2*n_LHA > LHA) {    //Calculating betas
+                Vector v = Vector(periodLength, beta_LHA[iyr-1][LHA-n_LHA]);    //todo: make 1 line
+                push_back(LHA_return_beta_date[LHA], v);
+            }
+            else                        //Calculating dates
+                push_back(LHA_return_beta_date[LHA], int_to_double(dateRange(iPeriods[iyr], Dates)));
+        }
+    }
+
+    //Saving CSV
+    vector<string> headers = {"lowReturn", "highReturn", "allReturn", "lowPortBeta", "highPortBeta", "allPortBeta", "dates"};
+    LHA_return_beta_date.push_back(skip_First_X(sp500, iPeriods[0][1]));
+    LHA_return_beta_date.push_back(skip_First_X(riskFree, iPeriods[0][1]));
+    headers.emplace_back("sp500");
+    headers.emplace_back("riskFree");
+
+    Save_CSV(folderName+"/BackTest_CSV.txt", LHA_return_beta_date, headers);
+    save_logfile(start, logMessage, folderName);
+}
+
+ Vector Portfolio_Returns(Intor PERMNO, Intrix iDates, Intor iPeriod, Matrix Rs)
+{
+    //Initiating data structures
+    int N = PERMNO.size();
+    Vector iID(N);
+
+    Intor iStart(N);
+    Intor iRun_Period(N);
+
+    int periodLength = iPeriod[1] - iPeriod[0] + 1;
+    Vector portfolio_return(periodLength);
+    Vector portfolio_kurs(periodLength);
+    Vector portfolio_sum(periodLength);
+
+    Vector shareprice(N,1);
+
+    //Finding the indexes of the PERMNO's in Rs, to look stock up in Rs
+    int ID_count = 0;
+    for (int i = 0; i < Rs.size(); ++i)
+        if(Rs[i][0] == PERMNO[ID_count])
+        {
+            iID[ID_count] = i;
+            ID_count++;
+        }
+
+    //Finding the start and amount of trading days from start with stock data
+    for (int i = 0; i < N; ++i)
+    {
+        int ID = iID[i];
+        iStart  [i] = (iPeriod[0] - iDates[ID][1]) + 1;   //index where period start in Rs[i]
+        iRun_Period[i] = Rs[ID].size() - iStart[i];   //index where period end in Rs[i]
+    }
+
+    //Calculating portfolio returns for period
+    for (int day = 0; day<periodLength; ++day)
+    {
+        Vector shareprice_day(0);
+        for (int stock = 0; stock<N; ++stock)
+        {
+            //If stock is still 'alive'
+            if(day < iRun_Period[stock])
+            {
+                //Calculating new share price of portfolio
+                double stock_return = Rs[iID[stock]][iStart[stock] + day];
+                if(stock_return > -1.5) shareprice[stock] *= (1.0 + stock_return);
+                shareprice_day.push_back(shareprice[stock]);
+            }
+        }
+        //Daily portfolio shareprice and return is calculated
+
+        //portfolio_kurs[day] = average(shareprice_day);  //why not shareprice, thus all stocks
+        portfolio_kurs[day] = average(shareprice) * N/shareprice_day.size();
+
+        if(day != 0)    portfolio_return[day] = portfolio_kurs[day]/portfolio_kurs[day-1] -1;
+        else            portfolio_return[day] = portfolio_kurs[day]/1.0 - 1;
+    }
+    return portfolio_return;
+}
+
 
  */
+
+//old or unused calculate code
+double CovSP500_log(Vector Stock, Vector sp500, int iStart_sp500, int iEnd_sp500, int iStart_DR)
+{
+    int d_iDates = iEnd_sp500 - iStart_sp500 + 1;
+    double Mean_Stock = 0, Mean_sp500 = 0, Covv = 0;
+    int trading_Days = 0;
+
+    //Mean
+    for (int i = 0; i < d_iDates; i++)
+    {
+        if(Stock[i+iStart_DR] != -2)
+        {
+            trading_Days++;
+            Mean_Stock += log(1+Stock[i + iStart_DR]);
+            Mean_sp500 += log(1+sp500[i + iStart_sp500]);
+        }
+    }
+    Mean_Stock /= trading_Days;
+    Mean_sp500 /= trading_Days;
+
+    //CovSP500
+    for (int i = 0; i < d_iDates; i++)
+    {
+        if(Stock[i+iStart_DR] != -2)
+            Covv += (log(1+Stock[i+iStart_DR]) - Mean_Stock) * (log(1+sp500[i + iStart_sp500]) - Mean_sp500);
+    }
+    return Covv /(trading_Days - 1);
+}
+double Var_log(Vector sp500, int Start_number, int End_number)
+{
+    double Mean = 0, Variance = 0;
+    //int d_dates = End_number-Start_number+1;
+    //if(sp500.size() < d_dates) d_dates = sp500.size();
+
+    int trading_Days=0;
+
+    //Mean
+    for (int i = Start_number; i < End_number+1; i++)
+    {
+        if(sp500[i] != -2)
+        {
+            trading_Days++;
+            Mean += log(1+sp500[i]);
+        }
+    }
+    Mean /= trading_Days;
+
+    //Variance
+    for (int i = Start_number; i < End_number+1; i++)
+    {
+        if(sp500[i] != -2)
+            Variance += (log(1+sp500[i]) - Mean) * (log(1+sp500[i]) - Mean);
+    }
+    return Variance /(trading_Days - 1);
+}
+Intor Column_of_Intrix(Intrix A, int n)
+{
+    Intor v(A.size());
+    for (int i = 0; i < A.size(); ++i) {
+        v[i] = A[i][n];
+    }
+    return v;
+}
+bool areFilesExistInEitherDirectory(const vector<string>& filenames, const vector<string>& directoryPaths)
+{
+    bool allExist = true;
+    for (const auto& filename : filenames) {
+        for(const auto& directoryPath : directoryPaths)
+        {
+            const auto filepath = directoryPath + filename;
+            if (!filesystem::exists(filepath)) {
+                std::cerr << "File " << filepath << " does not exist\n";
+                allExist = false;
+            }
+        }
+    }
+    if(allExist)    return true;
+    else            return false;
+}
+Intrix dPeriods_From_iPeriod(Intrix iPeriod)
+{
+    Intor Dates = Load_Intor("Dly_DateList.txt");
+    for(auto & i : iPeriod)
+    {
+        i[0] = Dates[i[0]];
+        i[1] = Dates[i[1]];
+    }
+    return iPeriod;
+}
+int numFilesInDir(string dirPath)
+{
+    const std::filesystem::path dir_path = dirPath;
+    int num_files = 0;
+    for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
+        if (entry.path().filename().string()[0] != '.') {
+            ++num_files;
+        }
+    }
+    return num_files;
+}
+int countOfElements(Matrix A)
+{
+    int count = 0;
+    for(auto v:A) {
+        count += v.size();
+    }
+    return count;
+}
+Vector Portfolio_Returns_methods(Intor PERMNO, Intrix iDates, Intor iPeriod, Matrix Rs, Vector riskFree, string Method)
+{
+    //Initiating data structures
+    int N = PERMNO.size();
+    Vector iID(N);
+
+    Intor iStart(N);
+    Intor iRun_Period(N);
+
+    int periodLength = iPeriod[1] - iPeriod[0] + 1;
+    Vector portfolio_return(periodLength);
+    Vector portfolio_sum(periodLength);
+
+    Vector shareprice(N,1);
+
+    //Finding the indexes of the PERMNO's in Rs, to look stock up in Rs
+    int ID_count = 0;
+    for (int i = 0; i < Rs.size(); ++i)
+        if(Rs[i][0] == PERMNO[ID_count])
+        {
+            iID[ID_count] = i;
+            ID_count++;
+        }
+
+    //Finding the start and amount of trading days from start with stock data
+    for (int i = 0; i < N; ++i)
+    {
+        int ID = iID[i];
+        iStart  [i] = (iPeriod[0] - iDates[ID][1]) + 1;   //index where period start in Rs[i]
+        iRun_Period[i] = Rs[ID].size() - iStart[i];   //index where period end in Rs[i]
+    }
+
+    //Calculating portfolio returns for period
+    for (int day = 0; day<periodLength; ++day)
+    {
+        //shareprice_last is updated
+        Vector shareprice_last = shareprice;
+
+        //shareprice is calculated
+        for (int stock = 0; stock<N; ++stock)
+        {
+            //If stock is still 'alive', return is from stock, otherwise return is from the risk free rate
+            if(day < iRun_Period[stock])    shareprice[stock] *= (1.0 + Rs[iID[stock]][iStart[stock] +day]);
+            else if(Method == "RF") shareprice[stock] *= (1.0 + riskFree[iPeriod[0]+day]);
+        }
+
+        //Daily portfolio return is calculated based on either riskFree or EqualSplit when stock is missing data
+        if(Method == "RF")
+            portfolio_return[day] = sum(shareprice)/sum(shareprice_last) -1;
+        else if(Method == "EQ")
+        {
+            double portPrice=0, portPrice_last=0;
+            for (int stock = 0; stock<N; ++stock)
+            {
+                if(day < iRun_Period[stock])
+                {
+                    portPrice += shareprice[stock];
+                    portPrice_last += shareprice_last[stock];
+                }
+            }
+            portfolio_return[day] = portPrice/portPrice_last -1;
+        }
+        else if(Method == "Rebalance" || Method == "RB"){
+
+            portfolio_return[day] = sum(shareprice)/sum(shareprice_last) -1;
+
+            double sum_lost=0, sum_now=0, sum_last=0;
+            for (int stock = 0; stock<N; ++stock)
+            {
+                if(day-1 < iRun_Period[stock])
+                    sum_last += shareprice_last[stock];
+                if(day < iRun_Period[stock])
+                    sum_now += shareprice[stock];
+                if(day-1 == iRun_Period[stock])
+                    sum_lost += shareprice[stock];
+            }
+            double multiplier = sum_now/(sum_now-sum_lost);
+            for (int stock = 0; stock<N; ++stock)
+                if(day+1 < iRun_Period[stock])
+                    shareprice[stock] *= multiplier;
+        }
+    }
+    return portfolio_return;
+}
+void push_back(Intor& first, Intor last)
+{
+    first.insert(first.end(), last.begin(), last.end());
+}
+double average(const Vector& v)
+{
+    double sum = 0;
+    for(auto& e:v)
+        sum+=e;
+    return sum/(v.size()+0.0);
+}
+int day_after1926(int date)
+{
+    int year_after = date/10000 - 1926;
+    int month_after = (date%10000)/100 - 1;
+    int days_after = date%100-2;
+    return 263 * year_after + month_after * 23 + days_after * 13/16;
+} //TODO: Check if it works decently for years after 1927
+
+
+/*Intrix Dly_Dates_to_iDates(int (*Find_iDate)(int, Intor) ,Intrix Rs_Dates, Intor DateList, int start_j)
+{
+    for (auto & Date : Rs_Dates)
+    {
+        for (int j = start_j; j < Date.size(); ++j)
+        {
+            Date[j] = Find_iDate(Date[j], DateList);
+        }
+    }
+    return Rs_Dates;
+}*/
+/*vector<Intrix> SplitPeriods(const Intrix& iPeriods, int x, bool rest_in_first_period)
+{
+    int numRowsPerVec = floor(iPeriods.size() / x);
+    int rest = iPeriods.size() - x * numRowsPerVec;
+
+    vector<vector<vector<int>>> threeDimVec(x, vector<vector<int>>(numRowsPerVec, vector<int>(2)));
+
+    int currRow = 0;
+
+    for (int i = 0; i < x; i++) {
+        for (int j = 0; j < numRowsPerVec; j++) {
+            threeDimVec[i][j][0] = iPeriods[currRow][0];
+            threeDimVec[i][j][1] = iPeriods[currRow][1];
+            currRow++;
+        }
+        if(i==0)
+        {
+            if(rest_in_first_period)
+            {
+                if (rest > 0)
+                {
+                    for (int s = 0; s < rest; ++s)
+                    {
+                        threeDimVec[0].push_back({iPeriods[currRow][0],iPeriods[currRow][1]});
+                        currRow++;
+                    }
+                }
+            }
+        }
+    }
+
+    cout << "Periods of years was made to be (" << x << " x " << numRowsPerVec << ")";
+    if(rest > 0)
+    {
+        if(rest_in_first_period)
+            cout << ", first period have " << numRowsPerVec+rest << " periods.\n";
+        else
+            cout << ", first period also have " << numRowsPerVec << " periods, so " << rest << " yeas was not included in any period.\n";
+    }
+    else
+        cout << ".\n";
+
+    return threeDimVec;
+}*/

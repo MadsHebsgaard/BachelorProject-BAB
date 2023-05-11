@@ -12,17 +12,17 @@ using Matrix = vector<vector<double>>;
 #include "load.h"
 
 
-//Vector testPort11  = PortfolioReturns({10006}, DR_iDates, iPeriod[1], DR);
-//Vector testPort12  = PortfolioReturns({10022}, DR_iDates, iPeriod[1], DR);
-//Vector testPort2  = PortfolioReturns({10006, 10022}, DR_iDates, iPeriod[1], DR);
-//Vector testPort3  = PortfolioReturns({10006, 10022, 10030}, DR_iDates, iPeriod[1], DR);
+//Vector testPort11  = Portfolio_Returns({10006}, DR_iDates, iPeriod[1], DR);
+//Vector testPort12  = Portfolio_Returns({10022}, DR_iDates, iPeriod[1], DR);
+//Vector testPort2  = Portfolio_Returns({10006, 10022}, DR_iDates, iPeriod[1], DR);
+//Vector testPort3  = Portfolio_Returns({10006, 10022, 10030}, DR_iDates, iPeriod[1], DR);
 //Save("Data/temp_10006_10022_1.txt" , testPort2);
 //Save("Data/temp_10006_1.txt" , testPort11);
 //Save("Data/temp_10022_1.txt" , testPort12);
 
 //string name = "run";
-//PrePost_Calculations(name, 0.3, 100, DR);
-//FindPortfolios(name, name, DR);
+//PrePost_run(name, 0.3, 100, DR);
+//BackTest_run(name, name, DR);
 
 
 /*
@@ -128,7 +128,7 @@ void OldTestCalculations(int max, double max_ratio, int minTradingDays)
     for (auto & iPeriod : iPeriods)
     {
         //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
-        beta_alpha_return = Beta_Alpha_Calculate(DR_ny, MC, iDates, sp500, riskFree, Dates, iPeriod, 130);
+        beta_alpha_return = Calculate_Performance(DR_ny, MC, iDates, sp500, riskFree, Dates, iPeriod, 130);
 
         //Store Data
         beta.insert(beta.end(), beta_alpha_return[0].begin(), beta_alpha_return[0].end());
@@ -179,7 +179,7 @@ void TestCalculations(string folderName, int max, double max_ratio, int minTradi
         for (auto & iPeriod : Era_List[i])
         {
             //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
-            beta_alpha_return = Beta_Alpha_Calculate(DR_ny, iDates, sp500, riskFree, Dates, iPeriod, 130);
+            beta_alpha_return = Calculate_Performance(DR_ny, iDates, sp500, riskFree, Dates, iPeriod, 130);
 
             //Store Data
             beta[i].insert(beta[i].end(), beta_alpha_return[0].begin(), beta_alpha_return[0].end());
@@ -252,7 +252,7 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
         {
             //if(Era == 0 && Period == 0) continue;
             //Calculate {beta, alpha, stock_return_akk, PERMNO, sp500_return_akk, riskFree_Return_akk}
-            twoPeriod_Data = TwoPeriod_Calc(DR_ny, iDates, sp500, riskFree, Dates, Era_List[Era][Period-1], Era_List[Era][Period]);
+            twoPeriod_Data = PrePost_Performance(DR_ny, iDates, sp500, riskFree, Dates, Era_List[Era][Period-1], Era_List[Era][Period]);
 
             //Create dirs and then files
             string periodPre_DirName = preDirName + "/Period_" + to_string(Period);

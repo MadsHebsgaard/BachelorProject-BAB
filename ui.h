@@ -28,6 +28,23 @@ void Print(Matrix A)
     }
     cout << endl << endl;
 }
+void Print(Intrix A)
+{
+    int m, n;
+    m=A.size();
+    n=A[0].size();
+
+    for(int i=0; i<m; i++)
+    {
+        cout << "[";
+        for(int j=0; j<n;j++)
+        {
+            cout << setw(10) << A[i][j];
+        }
+        cout << "  ]" << endl;
+    }
+    cout << endl << endl;
+}
 void Print_Matrix_Transposed(Matrix A)
 {
     int m, n;

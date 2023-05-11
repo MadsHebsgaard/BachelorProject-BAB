@@ -211,6 +211,12 @@ void Setup_all_files()
         cout << "The function only needs to be activated once.\n\n";
         int max = 99999999;
 
+        //When testing to reduce load time by 99%
+        //Intrix Dly_Rs_Dates = Load_Intrix("Data/Input/Processed_Files_new2/Dly/Rs_Dates.txt",-1);
+        //Save(Proccessed_Dly+"Rs_Dates.txt", Dly_Rs_Dates);
+        //Intrix Mly_Rs_Dates = Load_Intrix("Data/Input/Processed_Files_new2/Mly/Rs_Dates.txt",-1);
+        //Save(Proccessed_Mly+"Rs_Dates.txt", Mly_Rs_Dates);
+
     //Dly
         //Rs
         Matrix Rs = Load_DR(Exo_FilePath+"Dly_Rs.txt", max);  //TODO: uncomment
@@ -222,8 +228,6 @@ void Setup_all_files()
 
         //DateList
         Intor Dly_DateList = Load_Intor(Exo_FilePath + "Dly_DateList.txt");
-        Dly_DateList.push_back(55555555);
-        for(int i=0; i<20; i++) Dly_DateList.push_back(999999999);
         Save(Proccessed_Dly + "DateList.txt", Dly_DateList);
 
         //Rs_iDates
@@ -255,8 +259,6 @@ void Setup_all_files()
 
         //DateList
         Intor Mly_DateList = Dly_to_Mly_DateList(Dly_DateList);
-        Mly_DateList.push_back(55555555);
-        for(int i=0; i<20; i++) Mly_DateList.push_back(999999999);
         Save(Proccessed_Mly + "DateList.txt", Mly_DateList);
 
         //Rs_iDates
@@ -264,12 +266,12 @@ void Setup_all_files()
         Save(Proccessed_Mly + "Rs_iDates.txt", Mly_Rs_iDates);
 
         //Mly_iPeriods
-        Intrix Mly_iPeriods = x_iPeriods("Yly", "Mly", Mly_DateList);   //0-11, 12-23 , ...
+        //Intrix Mly_iPeriods = x_iPeriods("Yly", "Mly", Mly_DateList);   //0-11, 12-23 , ...
+        Intrix Mly_iPeriods = Create_Mly_iPeriods(Mly_DateList);   //0-11, 12-23 , ...
         Save(Proccessed_Mly + "iPeriods.txt", Mly_iPeriods);
 
         //iPeriods needed to create 'Risk free return'
         Intrix Dly_M_iPeriods = x_iPeriods("Mly", "Dly", Dly_DateList);
-        Intrix Dly_Y_iPeriods = x_iPeriods("Yly", "Dly", Dly_DateList);
 
         //Risk free return
         Vector Mly_RFR = period_accumulate_of_Dly(Dly_RFR, Dly_M_iPeriods);
