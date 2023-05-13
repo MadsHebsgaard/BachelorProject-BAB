@@ -22,7 +22,7 @@ using Vector = vector<double>;
 using Matrix = vector<vector<double>>;
 using Tensor3 = vector<Matrix>;
 using Tensor4 = vector<Tensor3>;
-using Tensor5 = vector<Tensor4>;
+using Tensor5 [[maybe_unused]] = vector<Tensor4>;
 
 
 /*
@@ -862,13 +862,6 @@ void push_back(Intor& first, Intor last)
 {
     first.insert(first.end(), last.begin(), last.end());
 }
-double average(const Vector& v)
-{
-    double sum = 0;
-    for(auto& e:v)
-        sum+=e;
-    return sum/(v.size()+0.0);
-}
 int day_after1926(int date)
 {
     int year_after = date/10000 - 1926;
@@ -876,12 +869,12 @@ int day_after1926(int date)
     int days_after = date%100-2;
     return 263 * year_after + month_after * 23 + days_after * 13/16;
 } //TODO: Check if it works decently for years after 1927
-int Slow_Find_iDate(int date, Intor Date_list)
+/*int Slow_Find_iDate(int date, Intor Date_list)
 {
     int index = 0;
     while(Date_list[index] < date)    index += 1;
     return index;
-}
+}*/
 
 
 inline bool filePath_exists(const std::string& name) {
@@ -1055,6 +1048,167 @@ void Process_Files(string Dly_Mly_Both, bool Reload_Everything, bool Reload_smal
 }
 
 
+pair<vector<Intrix>, Matrix> StockSelector_old(vector<Matrix> Data, Vector betaCond)
+{
+    //Initiate readability variables
+    int year = 0, beta = 1, PERMNO = 2;
+    int pre = 0, post = 1;
+    int low = 0, high = 1, all=2;
+
+    //Initiate data variables
+    int n_LHA = 3;
+    int yrMin = Data[post][year][0];
+    int yrMax = Data[post][year][Data[post][year].size()-1];
+    vector<Intrix> ID_LHA(yrMax-yrMin+1, Intrix(n_LHA, Intor(0)));
+    Matrix beta_LHA(yrMax-yrMin+1, Vector(n_LHA,0));    //Low, High and All beta portfolio
+
+    int st = 0;
+    for (int yr = yrMin; yr <= yrMax; ++yr)
+    {
+        int iyr = yr-yrMin;
+        while(Data[post][year][st] == yr)
+        {
+            //calculate beta
+            double hist_Beta = Data[pre][beta][st];
+
+            //Add stock to portfolio with all stocks regardless of beta
+            ID_LHA[iyr][all].push_back(Data[pre][PERMNO][st]);
+            beta_LHA[iyr][all] += (hist_Beta);
+
+            //Low beta portefolio
+            if(hist_Beta > betaCond[0] && hist_Beta < betaCond[1])
+            {
+                ID_LHA[iyr][low].push_back(Data[pre][PERMNO][st]);
+                beta_LHA[iyr][low] += (hist_Beta);
+            }
+                //High beta portefolio
+            else if(hist_Beta > betaCond[2] && hist_Beta < betaCond[3])
+            {
+                ID_LHA[iyr][high].push_back(Data[pre][PERMNO][st]);
+                beta_LHA[iyr][high] += (hist_Beta);
+            }
+            st++;   //next stock
+        }
+        //Average beta in each portefolio
+        for (int LHA = 0; LHA<n_LHA; ++LHA)
+            beta_LHA[iyr][LHA] /= ID_LHA[iyr][LHA].size();
+    }
+    return {ID_LHA, beta_LHA};
+}
+Vector PortfolioReturns_method_old(Intor PERMNO, Intrix iDates, Intor iPeriod, Matrix Rs, Vector riskFree, const string& method)
+{
+    //Initiating data structures
+    size_t N = PERMNO.size();
+    Intor iID(N);
+
+    vector<size_t> iStart(N);
+    vector<size_t> iRun_Period(N);
+
+
+    int periodLength = iPeriod[1] - iPeriod[0] + 1;
+    Vector portfolio_return(periodLength);
+    Vector portfolio_sum(periodLength);
+
+    Vector shareprice(N,1);
+
+    //Finding the indexes of the PERMNO's in Rs, to look stock up in Rs
+    int ID_count = 0;
+    for (int i = 0; i < Rs.size(); ++i)
+        if(Rs[i][0] == PERMNO[ID_count])
+        {
+            iID[ID_count] = i;
+            ID_count++;
+        }
+
+    //Finding the start and amount of trading days from start with stock data
+    for (int i = 0; i < N; ++i)
+    {
+        int ID = iID[i];
+        iStart[i] = (iPeriod[0] - iDates[ID][1]) + 1;   //index where period start in Rs[i]
+        iRun_Period[i] = Rs[ID].size() - iStart[i];   //index where period end in Rs[i]
+    }
+
+    //Calculating portfolio returns for period
+    for (int day = 0; day<periodLength; ++day)
+    {
+        if(method == "rebalance" || method=="RB")
+        {
+            double total_return=0;
+            int totalLeft=0;
+            for (int stock = 0; stock<N; ++stock) {
+                if(day < iRun_Period[stock] && Rs[iID[stock]][iStart[stock] + day] > -1.5)
+                {
+                    total_return += Rs[iID[stock]][iStart[stock] +day];
+                    totalLeft++;
+                }
+            }
+            portfolio_return[day] = total_return/totalLeft;
+            continue;
+        }
+        //shareprice_last is updated
+        Vector shareprice_last = shareprice;
+
+        //shareprice is calculated
+        for (int stock = 0; stock<N; ++stock)
+        {
+            //if nothing else, return is zero for the day
+            double stock_return = 0;
+
+            //If stock is still 'alive', and return is non empty (-2) return is from stock, otherwise return is from the risk free rate if method is selected
+            if(day < iRun_Period[stock] && Rs[iID[stock]][iStart[stock] + day] > -1.5)  stock_return = Rs[iID[stock]][iStart[stock] + day];
+            else if(method == "RF" || method == "riskfree")                             stock_return = riskFree[iPeriod[0]+day];
+
+            //Shareprice is now updated
+            shareprice[stock] *= (1 + stock_return);
+        }
+
+        //Daily portfolio return is calculated based on either riskFree or distributed method when stock is missing data
+        if(method == "RF" || method == "riskfree")
+        {
+            portfolio_return[day] = sum(shareprice)/sum(shareprice_last) -1;
+        }
+        else if(method == "DT" || method == "distributed")
+        {
+            double portPrice=0, portPrice_last=0;
+            for (int stock = 0; stock<N; ++stock)
+            {
+                if(day < iRun_Period[stock] && Rs[iID[stock]][iStart[stock] + day] > -1.5)
+                {
+                    portPrice += shareprice[stock];
+                    portPrice_last += shareprice_last[stock];
+                }
+            }
+            portfolio_return[day] = portPrice/portPrice_last -1;
+        }
+    }
+    return portfolio_return;
+}
+Matrix LHA_PortfolioCreator_old(vector<Intrix> ID_LHA, Matrix beta_LHA, Matrix Rs, Vector riskFree, Intrix iPeriods, Intrix iDates, Intor Dates, int post_yrMin, int post_yrMax, string method)
+{
+    //Creating portfolios //add new function
+    int n_LHA = ID_LHA[0].size();
+    int iyr_start = post_yrMin-1926;
+    Matrix LHA_PortData(2*n_LHA+1, Vector(0));
+    for (int iyr = iyr_start; iyr <= post_yrMax-1926; ++iyr)  //use yrTotal instead
+    {
+        //Calculating period length
+        int periodLength = iPeriods[iyr][1]-iPeriods[iyr][0]+1;
+
+        //Calculating returns
+        for (int LHA = 0; LHA<n_LHA; ++LHA)
+            push_back(LHA_PortData[LHA], PortfolioReturns_method_old(ID_LHA[iyr-iyr_start][LHA], iDates, iPeriods[iyr], Rs, riskFree, method));
+
+        //Calculating betas
+        for (int LHA = 0; LHA<n_LHA; ++LHA)
+            push_back(LHA_PortData[LHA+n_LHA], Vector(periodLength, beta_LHA[iyr-iyr_start][LHA]));
+
+        //Calculating dates
+        push_back(LHA_PortData[2*n_LHA], int_to_double(dateRange(iPeriods[iyr], Dates)));
+    }
+    return LHA_PortData;
+}
+
+
 /*Intrix Dly_Dates_to_iDates(int (*Find_iDate)(int, Intor) ,Intrix Rs_Dates, Intor DateList, int start_j)
 {
     for (auto & Date : Rs_Dates)
@@ -1110,3 +1264,25 @@ void Process_Files(string Dly_Mly_Both, bool Reload_Everything, bool Reload_smal
 
     return threeDimVec;
 }*/
+
+
+/*
+Matrix LHA_PortData;
+
+if(beta_weighted)
+{
+    //Beta weighted
+    auto [ID_LHA, beta_LHA] = StockSelector_stockBeta(Data, betaCond);
+    LHA_PortData = LHA_PortfolioCreator_stockBeta(ID_LHA, beta_LHA, Rs, riskFree, iPeriods, iDates, Dates, post_yrMin, post_yrMax, method, beta_weighted);
+}
+else
+{
+    //Unweighted
+    auto [ID_LHA, beta_LHA] = StockSelector(Data, betaCond);
+    LHA_PortData = LHA_PortfolioCreator(ID_LHA, beta_LHA, Rs, riskFree, iPeriods, iDates, Dates, post_yrMin, post_yrMax, method);
+}
+*/
+
+//old method (unweighted)   //todo: remove
+//auto [ID_LHA, beta_LHA] = StockSelector(Data, betaCond);
+//Matrix LHA_PortData = LHA_PortfolioCreator(ID_LHA, beta_LHA, Rs, riskFree, iPeriods, iDates, Dates, post_yrMin, post_yrMax, method);

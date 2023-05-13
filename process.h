@@ -38,9 +38,9 @@ void Setup_all_files()
         int max = 99999999;
 
         //When testing to reduce load time by 99%
-        //Intrix Dly_Rs_Dates = Load_Intrix("Data/Input/Processed_Files_new2/Dly/Rs_Dates.txt",-1);
+        //Intrix Dly_Rs_Dates = Load_Intrix("Data/Input/Processed_Files/Dly/Rs_Dates.txt",-1);
         //Save(Proccessed_Dly+"Rs_Dates.txt", Dly_Rs_Dates);
-        //Intrix Mly_Rs_Dates = Load_Intrix("Data/Input/Processed_Files_new2/Mly/Rs_Dates.txt",-1);
+        //Intrix Mly_Rs_Dates = Load_Intrix("Data/Input/Processed_Files/Mly/Rs_Dates.txt",-1);
         //Save(Proccessed_Mly+"Rs_Dates.txt", Mly_Rs_Dates);
 
     //Dly

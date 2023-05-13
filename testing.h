@@ -25,6 +25,27 @@ using Matrix = vector<vector<double>>;
 //BackTest_run(name, name, DR);
 
 
+//Testing of portfolio function
+/*
+Matrix Rs = Load_Rs_Compressed("Data/Input/Processed_Files/Mly/Rs.txt", 5000);
+//Rs = Edit_DR(Rs, 0.4, 10);    //Dly problem when TD is low and R = 1. May cause some bias, so turned off
+
+string methodName = "testing", folderName="testing", incr="Mly";
+vector<string> logMessage, fileNames;
+Matrix MC;
+Vector Inflation_Factor, sp500, riskFree;
+Intrix iPeriods, iDates;
+Intor Dates;
+Load_Data(Rs, logMessage, MC, Inflation_Factor, iDates, sp500, riskFree, Dates, iPeriods, folderName, methodName, fileNames, incr);
+
+Vector r = PortfolioReturns_method({10006, 14031}, {0.6,0.4}, iDates, {84,107}, Rs, riskFree, "RB");
+Print(r);
+*/
+
+
+
+
+
 /*
 int Dly_Find_iDate(int date, Intor& Date_list);
 

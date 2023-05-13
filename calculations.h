@@ -24,7 +24,7 @@ vector<Matrix> Overlapping_ID_Matrix(Matrix A, Matrix B, int ID_row);
 void defineFilePaths(string& incr, string& Exo_FilePath, string& Proccessed_FilePath, string& Proccessed_FilePath_inc, string& Proccessed_Dly, string& Proccessed_Mly, string& Proccessed_Yly)
 {
     Exo_FilePath = "Data/Input/Exo_Files/";
-    Proccessed_FilePath = "Data/Input/Processed_Files/";
+    Proccessed_FilePath = "Data/Input/Processed_Files_test2/";
     //Proccessed_FilePath = "Data/Input/Processed_Files_new2/";
     //Proccessed_FilePath = "Data/Input/Processed_Files_new3/";
 
@@ -211,25 +211,23 @@ vector<Matrix> PrePost_Performance(const Matrix& DR, const Matrix& MC, const Int
             BetaOverlap, false);
     return Overlapping_ID_Matrix(Pre_Data, Post_Data, 3);
 }
-Vector PortfolioReturns_method(Intor PERMNO, Intrix iDates, Intor iPeriod, Matrix Rs, Vector riskFree, const string& method)
+Vector PortfolioReturns_method(const Intor& PERMNO, const Vector& weightes, const Intrix& iDates, const Intor& iPeriod, const Matrix& Rs, const Vector& riskFree, const string& method)
 {
     //Initiating data structures
+    size_t periodLength = iPeriod[1] - iPeriod[0] + 1;
     size_t N = PERMNO.size();
-    Intor iID(N);
 
+    vector<size_t> iID(N);
     vector<size_t> iStart(N);
     vector<size_t> iRun_Period(N);
 
-
-    int periodLength = iPeriod[1] - iPeriod[0] + 1;
     Vector portfolio_return(periodLength);
     Vector portfolio_sum(periodLength);
-
-    Vector shareprice(N,1);
+    Vector shareprice = weightes;
 
     //Finding the indexes of the PERMNO's in Rs, to look stock up in Rs
-    int ID_count = 0;
-    for (int i = 0; i < Rs.size(); ++i)
+    size_t ID_count = 0;
+    for (size_t i = 0; i < Rs.size(); ++i)
         if(Rs[i][0] == PERMNO[ID_count])
         {
             iID[ID_count] = i;
@@ -237,42 +235,45 @@ Vector PortfolioReturns_method(Intor PERMNO, Intrix iDates, Intor iPeriod, Matri
         }
 
     //Finding the start and amount of trading days from start with stock data
-    for (int i = 0; i < N; ++i)
+    for (size_t i = 0; i < N; ++i)
     {
-        int ID = iID[i];
+        size_t ID = iID[i];
         iStart[i] = (iPeriod[0] - iDates[ID][1]) + 1;   //index where period start in Rs[i]
         iRun_Period[i] = Rs[ID].size() - iStart[i];   //index where period end in Rs[i]
     }
 
     //Calculating portfolio returns for period
-    for (int day = 0; day<periodLength; ++day)
+    for (size_t day = 0; day<periodLength; ++day)
     {
         if(method == "rebalance" || method=="RB")
         {
-            double total_return=0;
-            int totalLeft=0;
+            double total_w_return=0;
+            double total_weigth_left=0;
+
             for (int stock = 0; stock<N; ++stock) {
                 if(day < iRun_Period[stock] && Rs[iID[stock]][iStart[stock] + day] > -1.5)
                 {
-                    total_return += Rs[iID[stock]][iStart[stock] +day];
-                    totalLeft++;
+                    total_w_return += weightes[stock] * Rs[iID[stock]][iStart[stock] +day];
+                    total_weigth_left += weightes[stock];
                 }
             }
-            portfolio_return[day] = total_return/totalLeft;
+            portfolio_return[day] = total_w_return/total_weigth_left;
             continue;
         }
         //shareprice_last is updated
         Vector shareprice_last = shareprice;
 
         //shareprice is calculated
-        for (int stock = 0; stock<N; ++stock)
+        for (size_t stock = 0; stock<N; ++stock)
         {
             //if nothing else, return is zero for the day
             double stock_return = 0;
 
             //If stock is still 'alive', and return is non empty (-2) return is from stock, otherwise return is from the risk free rate if method is selected
-            if(day < iRun_Period[stock] && Rs[iID[stock]][iStart[stock] + day] > -1.5)  stock_return = Rs[iID[stock]][iStart[stock] + day];
-            else if(method == "RF" || method == "riskfree")                             stock_return = riskFree[iPeriod[0]+day];
+            if(day < iRun_Period[stock] && Rs[iID[stock]][iStart[stock] + day] > -1.5)
+                stock_return = Rs[iID[stock]][iStart[stock] + day];
+            else if(method == "RF" || method == "riskfree")
+                stock_return = riskFree[iPeriod[0]+day];
 
             //Shareprice is now updated
             shareprice[stock] *= (1 + stock_return);
@@ -281,12 +282,12 @@ Vector PortfolioReturns_method(Intor PERMNO, Intrix iDates, Intor iPeriod, Matri
         //Daily portfolio return is calculated based on either riskFree or distributed method when stock is missing data
         if(method == "RF" || method == "riskfree")
         {
-            portfolio_return[day] = sum(shareprice)/sum(shareprice_last) -1;
+            portfolio_return[day] = sum(shareprice)/sum(shareprice_last) - 1;
         }
         else if(method == "DT" || method == "distributed")
         {
             double portPrice=0, portPrice_last=0;
-            for (int stock = 0; stock<N; ++stock)
+            for (size_t stock = 0; stock<N; ++stock)
             {
                 if(day < iRun_Period[stock] && Rs[iID[stock]][iStart[stock] + day] > -1.5)
                 {
@@ -395,6 +396,57 @@ double sum(const Vector& v) {
     for(auto& e:v)  sum_v += e;
     return sum_v;
 }
+double weighted_sum(const Vector& v, const Vector& weight) {
+    double w_sum_v=0;
+    for(size_t i=0; i<v.size(); i++)  w_sum_v += v[i] * weight[i];
+    return w_sum_v;
+}
+double weighted_average(const Vector& v, const Vector& weight) {
+    double w_sum_v=0;
+    for(size_t i=0; i<v.size(); i++)
+    {
+        w_sum_v += v[i] * weight[i];
+    }
+    return w_sum_v / sum(weight);
+}
+double average(const Vector& v)
+{
+    double sum = 0;
+    for(auto& e:v)
+        sum+=e;
+    return sum/( (double) v.size()+0.0);
+}
+double weighted_average_from_extreme(Vector v, double extreme) {
+    double sum = 0;
+    double weigth;
+    double t_weight = 0;
+    bool lowerNumers = false;
+    if(v[0] < extreme) lowerNumers = true;
+
+    for(auto& e:v)
+    {
+        if(lowerNumers) weigth = (extreme - e);
+        if(!lowerNumers) weigth = (e - extreme);
+        t_weight += weigth;
+        sum += e * weigth;
+    }
+    return sum/t_weight;
+}
+Vector weightes_from_extreme(Vector v, double extreme)
+{
+    double weigth;
+    bool lowerNumers = false;
+    if(v[0] < extreme) lowerNumers = true;
+
+    for(auto& e:v)
+    {
+        if(lowerNumers)  weigth = (extreme - e);
+        if(!lowerNumers) weigth = (e - extreme);
+        e = weigth;
+    }
+    return v;
+}
+
 Vector Matrix_Column(Matrix A, int j)
 {
     Vector col(A.size());
@@ -542,6 +594,12 @@ int Find_iDate(int date, Intor Date_list)
     }
     return index_apprx;
 }
+int Slow_Find_iDate(int date, Intor Date_list)
+{
+    int index = 0;
+    while(Date_list[index] < date)    index += 1;
+    return index;
+}
 Intrix Mly_Dates_to_iDates(Intrix Rs_Dates, int start_j)
 {
     for (auto & Date : Rs_Dates)
@@ -574,7 +632,7 @@ Intrix x_Periods(const string& Mly_Yly, Intor DateList)
     int i = 0, startDate=DateList[0];
     Intrix Periods(0, Intor(2));
 
-    while (DateList[i] < 99999999)
+    while (i<DateList.size())
     {
         if((DateList[i] - DateList[i-1]) > Cond)
         {
@@ -583,6 +641,7 @@ Intrix x_Periods(const string& Mly_Yly, Intor DateList)
         }
         i++;
     }
+    Periods.push_back({startDate, DateList.back()});
     return Periods;
 }
 Intrix x_iPeriods(const string& length_Mly_Yly, const string& data_Dly_Mly, const Intor& DateList)

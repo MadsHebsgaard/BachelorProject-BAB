@@ -14,7 +14,6 @@ using Vector = vector<double>;
 using Matrix = vector<vector<double>>;
 using Tensor3 = vector<Matrix>;
 using Tensor4 = vector<Tensor3>;
-using Tensor5 = vector<Tensor4>;
 
 Matrix Simple_Calculations(Matrix Rs, Matrix MC, Intrix iDates, Vector sp500, Vector riskFree, Intor Dates, Intrix iPeriods, Vector Inflation_Factor, int minTradingDays)
 {

@@ -19,6 +19,8 @@
 #include "testing.h"        //to be used for testing only
 #include "LegacyCode.h"     //Old code no longer in use
 
+
+
 using namespace std;
 using Intor = vector<int>;
 using Intrix = vector<vector<int>>;
@@ -36,25 +38,30 @@ using Tensor4 = vector<Tensor3>;
 
 int main()
 {
+    //Setup_all_files();
+
 
     string incr = "Mly";  //Mly  Dly
     string Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly;
     defineFilePaths(incr, Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly);
 
-    //Setup_all_files();
-
     double max_ratio = 0.4;
     int minTradingDays = 10;
+    int Rs_size = -1;
 
-    Matrix Rs = Load_Rs_Compressed(Proccessed_FilePath_incr + "Rs.txt", -1);
+    Matrix Rs = Load_Rs_Compressed(Proccessed_FilePath_incr + "Rs.txt", Rs_size);
     Rs = Edit_DR(Rs, max_ratio, minTradingDays);    //Dly problem when TD is low and R = 1. May cause some bias, so turned off
 
-    string filename = "run2";
-    Simple_run(incr, filename, minTradingDays, Rs);
-    PrePost_run(incr, filename, Rs);
+    string filename = "run_fixed_test";
 
-    BackTest_run(incr, "RF_"+ filename, filename, Rs, {-0.5, 1, 1, 3}, "RF");
-    BackTest_run(incr, "DT_"+ filename, filename, Rs, {-0.5, 1, 1, 3}, "DT");
+    //string filename = "run_2k";
+
+    //Simple_run(incr, filename, minTradingDays, Rs);
+    //PrePost_run(incr, filename, Rs);
+
+    BackTest_run(incr, "RF_"+filename+"_6", filename, Rs, {-0.5, 1, 1, 3}, "RF", false);
+    BackTest_run(incr, "DT_"+filename+"_6", filename, Rs, {-0.5, 1, 1, 3}, "DT", false);
+
 
     return 0;
 }
