@@ -41,13 +41,10 @@ Vector Load_Vector(const string& fn)
 {
     ifstream fil(fn);
     if(!fil) {  cout << "Could not read the file " << fn << ".";  return Vector(0);   }
-    Vector v;
+    Vector v(0);
     double e;
-    while(!fil.eof())
-    {
-        fil >> e;
+    while(fil >> e)
         v.push_back(e);
-    }
     fil.close();
     return v;
 }
