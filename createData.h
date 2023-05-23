@@ -15,21 +15,23 @@ using Matrix = vector<vector<double>>;
 using Tensor3 = vector<Matrix>;
 using Tensor4 = vector<Tensor3>;
 
-Matrix Simple_Calculations(Matrix Rs, Matrix MC, Intrix iDates, Vector sp500, Vector riskFree, Intor Dates, Intrix iPeriods, Vector Inflation_Factor, int minTradingDays)
+Matrix Simple_Calculations(const Matrix& Rs, const Matrix& MC, const Intrix& iDates,
+        const Vector& sp500, const Vector& riskFree, const Intor& Dates,
+        Intrix iPeriods, Vector Inflation_Factor, int minTradingDays, bool logarithm)
 {
     //Calculate DataSet
     Matrix DataSet(0);
     for (int Period = 0; Period < iPeriods.size(); Period++)
     {
         //Calculating data
-        Matrix Yly_Data = Calculate_Performance(Rs, MC, iDates, sp500, riskFree, Dates, iPeriods[Period],
-                                                   Inflation_Factor[Period], minTradingDays, false);
+        Matrix Yly_Data = Calculate_Performance(Rs, MC, iDates, sp500, riskFree, Dates,
+                iPeriods[Period], Inflation_Factor[Period], minTradingDays, false, logarithm);
         //Inserting Data
         push_back(DataSet, Yly_Data);
     }
     return DataSet;
 }
-void Simple_run(string incr, string folderName, int minTradingDays, Matrix Rs)
+void Simple_run(const string& incr, string folderName, int minTradingDays, Matrix Rs, bool logarithm)
 {
     //Loading the necessary data
     auto start = std::chrono::system_clock::now();
@@ -39,22 +41,39 @@ void Simple_run(string incr, string folderName, int minTradingDays, Matrix Rs)
     Vector Inflation_Factor, sp500, riskFree;
     Intrix iPeriods, iDates;
     Intor Dates;
-    Load_Data(Rs, logMessage, MC, Inflation_Factor, iDates, sp500, riskFree, Dates, iPeriods, folderName, methodName, fileNames, incr);
+    Load_Data(Rs, logMessage, MC, Inflation_Factor, iDates, sp500, riskFree,
+            Dates, iPeriods, folderName, methodName, fileNames, incr);
 
     //Calculate DataSet
-    Matrix DataSet = Simple_Calculations(Rs, MC, iDates, sp500, riskFree, Dates, iPeriods, Inflation_Factor, minTradingDays);
+    Matrix DataSet = Simple_Calculations(Rs, MC, iDates, sp500, riskFree,
+            Dates, iPeriods, Inflation_Factor, minTradingDays, logarithm);
 
     //Saving CSV and logfile
     Save_CSV(folderName+"/"+methodName+"_CSV.txt", DataSet, fileNames);
-    save_logfile(start, logMessage, folderName);
-
-    //Saving individual files
-    //for (int file = 0; file < fileNames.size(); ++file)   Save(folderName + fileNames[file], DataSet[file]);
+    save_logfile(start, logMessage, folderName, logarithm);
 }
 
 
+vector<Matrix> PrePost_Performance(const Matrix& DR, const Matrix& MC, const Intrix& iDates, const Vector& sp500,
+        const Vector& riskFree, const Intor& Dates, Intrix iPeriod, const Vector& Inflation_factor, bool logarithm)
+{
+    vector<Matrix> A(0);
+    //size of BetaOverlap is a tradeoff of bias vs robust, makes Post_beta more robust at the cost of making Post_beta biased towards Pre_beta. Tradeoff is probably not bad.
+    int BetaPrePeriod = 500, BetaOverlap = 250;  //Dly
+    if (iPeriod[1][0] - iPeriod[0][0] == 12)    //Mly
+    {
+        BetaPrePeriod = 24;
+        BetaOverlap = 12;
+    }
 
-vector<Matrix> PrePost_Calculations(Matrix Rs, Matrix MC, Intrix iDates, Vector sp500, Vector riskFree, Intor Dates, Intrix iPeriods, Vector Inflation_Factor)
+    Matrix Pre_Data = Calculate_Performance(DR, MC, iDates, sp500, riskFree, Dates, iPeriod[0],
+            Inflation_factor[0], BetaPrePeriod, true, logarithm);
+    Matrix Post_Data = Calculate_Performance(DR, MC, iDates, sp500, riskFree, Dates, iPeriod[1], Inflation_factor[1],
+            BetaOverlap, false, logarithm);
+    return Overlapping_ID_Matrix(Pre_Data, Post_Data, 3);
+}
+vector<Matrix> PrePost_Calculations(const Matrix& Rs, const Matrix& MC, const Intrix& iDates, const Vector& sp500,
+        const Vector& riskFree, const Intor& Dates, const Intrix& iPeriods, const Vector& Inflation_Factor, bool logarithm)
 {
     //Calculate twoPeriod_Data
     vector<Matrix> fullData(vector<Matrix>(2,Matrix(0,Vector(0))));
@@ -62,12 +81,12 @@ vector<Matrix> PrePost_Calculations(Matrix Rs, Matrix MC, Intrix iDates, Vector 
     {
         //Calculating pre and post data
         vector<Matrix> Yly_Data = PrePost_Performance(Rs, MC, iDates, sp500, riskFree, Dates,
-                {iPeriods[Period-1], iPeriods[Period]}, {Inflation_Factor[Period-1], Inflation_Factor[Period]});
+                {iPeriods[Period-1], iPeriods[Period]}, {Inflation_Factor[Period-1], Inflation_Factor[Period]}, logarithm);
         push_back(fullData, Yly_Data);
     }
     return fullData;
 }
-void PrePost_run(string incr, string folderName, Matrix Rs)
+void PrePost_run(const string& incr, string folderName, Matrix Rs, bool logarithm)
 {
     //Loading the necessary data
     auto start = std::chrono::system_clock::now();
@@ -81,13 +100,13 @@ void PrePost_run(string incr, string folderName, Matrix Rs)
 
 
     //Calculate output data in twoPeriod_Data
-    vector<Matrix> fullData = PrePost_Calculations(Rs, MC, iDates, sp500, riskFree, Dates, iPeriods, Inflation_Factor);
+    vector<Matrix> fullData = PrePost_Calculations(Rs, MC, iDates, sp500, riskFree, Dates, iPeriods, Inflation_Factor, logarithm);
 
 
     //Saving CSV and logfile
     vector<string> prePost_str = {"_pre", "_post"};
     Save_TwoDataSet_CSV(folderName+"/"+methodName+"_CSV.txt", fullData, fileNames, prePost_str);
-    save_logfile(start, logMessage, folderName);
+    save_logfile(start, logMessage, folderName, logarithm);
 
     //Crating and saving individual dirs and files for backtesting use
     vector<string> paths {folderName + "/Pre_Period", folderName + "/Period"};

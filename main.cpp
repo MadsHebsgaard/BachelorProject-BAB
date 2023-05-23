@@ -29,39 +29,62 @@ using Matrix = vector<vector<double>>;
 using Tensor3 = vector<Matrix>;
 using Tensor4 = vector<Tensor3>;
 
-//todo:
-//(proccesed files) Add yly RFR
-//(proccesed files) Add yly sp500
-//(backtesting)     Antal aktier i hver portefølge start og slut
-//(Setup_all_files) Fix mly iPeriods
-//Check for DR
 
-int main()
+void Create_all_CSV_files(string incr)
 {
-    //Setup_all_files();
-
-
-    string incr = "Mly";  //Mly  Dly
     string Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly;
     defineFilePaths(incr, Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly);
 
     double max_ratio = 0.4;
-    int minTradingDays = 10;
-    int Rs_size = -1;
-
+    int minTradingDays = 10; //10 / 140
+    int Rs_size = -1;   // load all
     Matrix Rs = Load_Rs_Compressed(Proccessed_FilePath_incr + "Rs.txt", Rs_size);
-    Rs = Edit_DR(Rs, max_ratio, minTradingDays);    //Dly problem when TD is low and R = 1. May cause some bias, so turned off
+    Matrix Rs_i = Edit_Rs(Rs, max_ratio);
 
-    string filename = "run_fixed_test";
+    string filename = "run";
+    bool logarithm = false;
 
-    //string filename = "run_2k";
+    for (int i = 0; i<2; ++i) {
+        Simple_run(incr, filename, minTradingDays, Rs, logarithm);
+        PrePost_run(incr, filename, Rs, logarithm);
 
-    //Simple_run(incr, filename, minTradingDays, Rs);
-    //PrePost_run(incr, filename, Rs);
+        vector<string> calc_methods = {"RF", "DT", "RB"};
+        for (auto& str:calc_methods) {
+            BackTest_run(incr, "x_"+str+"_" + filename, filename, Rs, {-2, 1, 4}, str, false);
+            BackTest_run(incr, "x_"+str+"_" + filename + "_w_m", filename, Rs, {-2, 4}, str, true);
+            BackTest_run(incr, "x_"+str+"_" + filename + "_w", filename, Rs, {-2, 1, 4}, str, true);
+            BackTest_run(incr, "x_"+str+"_" + filename +"_m", filename, Rs, {-2, 4}, str, false);
+            BackTest_exotic(incr, "x_"+str+"_" + filename + "_momentum", filename, Rs, {-0.4, 0.5, 1}, str, "momentum");
+            BackTest_exotic(incr, "x_"+str+"_" + filename + "_MC", filename, Rs, {0, 0.5, 20}, str, "MC");
+        }
+        filename = filename+"_log";
+        logarithm=true;
+    }
+}
 
-    BackTest_run(incr, "RF_"+filename+"_6", filename, Rs, {-0.5, 1, 1, 3}, "RF", false);
-    BackTest_run(incr, "DT_"+filename+"_6", filename, Rs, {-0.5, 1, 1, 3}, "DT", false);
+void create_core_CSV_files(string incr)
+{
+    string Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly;
+    defineFilePaths(incr, Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly);
 
+    double max_ratio = 0.4;
+    int minTradingDays = 10; //10 / 140
+    int Rs_size = -1;   // load all
+    Matrix Rs = Load_Rs_Compressed(Proccessed_FilePath_incr + "Rs.txt", Rs_size);
+    Matrix Rs_i = Edit_Rs(Rs, max_ratio);
 
+    string filename = "run", method="RF";
+    bool logarithm = true;
+
+    Simple_run(incr, filename, minTradingDays, Rs, logarithm);
+    PrePost_run(incr, filename, Rs, logarithm);
+    BackTest_run(incr, filename, filename, Rs, {-2, 1, 4}, method, logarithm);
+    BackTest_run(incr, filename + "_w_m", filename, Rs, {-2, 4}, method, logarithm);
+}
+int main()
+{
+    Setup_all_files();  //Sets up all files. Turn off when you have done this sucessfully once.
+    //Create_all_CSV_files("Mly");   //Mly  Dly (Creates all files for monthly / daily)
+    create_core_CSV_files("Mly");
     return 0;
 }

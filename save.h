@@ -146,8 +146,9 @@ void saveLogFile(string filePath, vector<string> Message)
         fil << line << endl;
     fil.close();
 }
-void save_logfile(auto start, vector<string> logMessage, string folderName)
+void save_logfile(auto start, vector<string> logMessage, string folderName, bool logarithm)
 {
+    logMessage.push_back("Using log: " + to_string(logarithm));
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end-start;
     std::time_t end_time = std::chrono::system_clock::to_time_t(end);
@@ -183,7 +184,6 @@ void Save_CSV(string fn, Matrix A, vector<string> headers)
 }
 void Save_TwoDataSet_CSV(string fn, vector<Matrix> T3, vector<string> headers, vector<string> header_nr)
 {
-    //todo: Make it so that only if '/' and/or ".txt" is present, they are removed
     remove_char(headers, '/');
     remove_substring(headers, ".txt");
 
