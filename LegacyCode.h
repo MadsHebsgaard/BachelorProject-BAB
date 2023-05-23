@@ -467,7 +467,7 @@ void Load_Data(Matrix& DR, double& max_ratio, int& minTradingDays, vector<string
     string elementsDR = formatNumber(countOfElements(DR)-DR.size());
 
     //DR with condition for inclusion
-    DR = Edit_DR(DR, max_ratio, minTradingDays);
+    DR = Edit_Rs(DR, max_ratio, minTradingDays);
     string elementsDR_ny = formatNumber(countOfElements(DR)-DR.size());
     logMessage.push_back("DR_ny.size() = "+formatNumber(DR.size()));
 
@@ -667,6 +667,8 @@ void Load_Data(Matrix& DR, double& max_ratio, int& minTradingDays, vector<string
  */
 
 //old or unused calculate code
+
+/*
 double CovSP500_log(Vector Stock, Vector sp500, int iStart_sp500, int iEnd_sp500, int iStart_DR)
 {
     int d_iDates = iEnd_sp500 - iStart_sp500 + 1;
@@ -686,7 +688,7 @@ double CovSP500_log(Vector Stock, Vector sp500, int iStart_sp500, int iEnd_sp500
     Mean_Stock /= trading_Days;
     Mean_sp500 /= trading_Days;
 
-    //CovSP500
+    //CovSP500_log
     for (int i = 0; i < d_iDates; i++)
     {
         if(Stock[i+iStart_DR] != -2)
@@ -721,6 +723,8 @@ double Var_log(Vector sp500, int Start_number, int End_number)
     }
     return Variance /(trading_Days - 1);
 }
+*/
+
 Intor Column_of_Intrix(Intrix A, int n)
 {
     Intor v(A.size());
@@ -1272,17 +1276,163 @@ Matrix LHA_PortData;
 if(beta_weighted)
 {
     //Beta weighted
-    auto [ID_LHA, beta_LHA] = StockSelector_stockBeta(Data, betaCond);
-    LHA_PortData = LHA_PortfolioCreator_stockBeta(ID_LHA, beta_LHA, Rs, riskFree, iPeriods, iDates, Dates, post_yrMin, post_yrMax, method, beta_weighted);
+    auto [ID_LHA, beta_LHA] = StockSelector(Data, betaCond);
+    LHA_PortData = PortfolioCreator(ID_LHA, beta_LHA, Rs, riskFree, iPeriods, iDates, Dates, post_yrMin, post_yrMax, method, beta_weighted);
 }
 else
 {
     //Unweighted
-    auto [ID_LHA, beta_LHA] = StockSelector(Data, betaCond);
-    LHA_PortData = LHA_PortfolioCreator(ID_LHA, beta_LHA, Rs, riskFree, iPeriods, iDates, Dates, post_yrMin, post_yrMax, method);
+    auto [ID_LHA, beta_LHA] = StockSelector_old2(Data, betaCond);
+    LHA_PortData = LHA_PortfolioCreator_old(ID_LHA, beta_LHA, Rs, riskFree, iPeriods, iDates, Dates, post_yrMin, post_yrMax, method);
 }
 */
 
 //old method (unweighted)   //todo: remove
-//auto [ID_LHA, beta_LHA] = StockSelector(Data, betaCond);
-//Matrix LHA_PortData = LHA_PortfolioCreator(ID_LHA, beta_LHA, Rs, riskFree, iPeriods, iDates, Dates, post_yrMin, post_yrMax, method);
+//auto [ID_LHA, beta_LHA] = StockSelector_old2(Data, betaCond);
+//Matrix LHA_PortData = LHA_PortfolioCreator_old(ID_LHA, beta_LHA, Rs, riskFree, iPeriods, iDates, Dates, post_yrMin, post_yrMax, method);
+
+pair<vector<Intrix>, Matrix> StockSelector_old2(vector<Matrix> Data, Vector betaCond)
+{
+    //Initiate readability variables
+    size_t year = 0, beta = 1, PERMNO = 2;
+    size_t pre = 0, post = 1;
+    size_t low = 0, high = 1, all=2;
+
+    //Initiate data variables
+    size_t n_LHA = 3;
+    size_t yrMin = round(Data[post][year][0]);
+    size_t yrMax = round(Data[post][year][Data[post][year].size()-1]);
+    vector<Intrix> ID_LHA(yrMax-yrMin+1, Intrix(n_LHA, Intor(0)));
+    Matrix beta_LHA(yrMax-yrMin+1, Vector(n_LHA,0));    //Low, High and All beta portfolio
+
+    size_t st = 0;
+    for (size_t yr = yrMin; yr <= yrMax; ++yr)
+    {
+        size_t iyr = yr-yrMin;
+        while(round(Data[post][year][st]) == yr)
+        {
+            //calculate beta
+            double hist_Beta = Data[pre][beta][st];
+
+            //Add stock to portfolio with all stocks regardless of beta
+            ID_LHA[iyr][all].push_back(round(Data[pre][PERMNO][st]));
+            beta_LHA[iyr][all] += (hist_Beta);
+
+            //Low beta portefolio
+            if(hist_Beta > betaCond[0] && hist_Beta < betaCond[1])
+            {
+                ID_LHA[iyr][low].push_back(round(Data[pre][PERMNO][st]));
+                beta_LHA[iyr][low] += (hist_Beta);
+            }
+                //High beta portefolio
+            else if(hist_Beta > betaCond[2] && hist_Beta < betaCond[3])
+            {
+                ID_LHA[iyr][high].push_back(round(Data[pre][PERMNO][st]));
+                beta_LHA[iyr][high] += (hist_Beta);
+            }
+            st++;   //next stock
+        }
+        //Average beta in each portefolio
+        for (size_t LHA = 0; LHA<n_LHA; ++LHA)
+            beta_LHA[iyr][LHA] /= (double) ID_LHA[iyr][LHA].size();
+    }
+    return {ID_LHA, beta_LHA};
+}
+Matrix LHA_PortfolioCreator_old(const vector<Intrix>& ID_LHA, const Matrix& beta_LHA, const Matrix& Rs, const Vector& riskFree, const Intrix& iPeriods, const Intrix& iDates, const Intor& Dates, const size_t& post_yrMin, const size_t& post_yrMax, const string& method)
+{
+    //Creating portfolios //add new function
+    size_t n_LHA = ID_LHA[0].size();
+    size_t iyr_start = post_yrMin-1926;
+    Matrix LHA_PortData(2*n_LHA+1, Vector(0));
+    for (size_t iyr = iyr_start; iyr <= post_yrMax-1926; ++iyr)  //use yrTotal instead
+    {
+
+        if(iyr == post_yrMax-1926)
+            cout << "gg";
+
+        //Calculating period length
+        size_t periodLength = iPeriods[iyr][1]-iPeriods[iyr][0]+1;
+
+        //Calculating (LHA) portfolio returns
+        for (size_t LHA = 0; LHA<n_LHA; ++LHA)
+        {
+            Vector weigths(ID_LHA[iyr-iyr_start][LHA].size(), 1);
+            Vector period_returns = PortfolioReturns_method(ID_LHA[iyr-iyr_start][LHA], weigths, iDates, iPeriods[iyr], Rs, riskFree, method);
+            //Print(period_returns);  //TODO: last year wrong at this point
+            push_back(LHA_PortData[LHA], period_returns);
+        }
+
+        //Calculating betas
+        for (size_t LHA = 0; LHA<n_LHA; ++LHA)
+        {
+            Vector betas(periodLength, beta_LHA[iyr-iyr_start][LHA]);
+            push_back(LHA_PortData[LHA+n_LHA], betas);
+        }
+
+        //Calculating dates
+        push_back(LHA_PortData[2*n_LHA], int_to_double(dateRange(iPeriods[iyr], Dates)));
+    }
+    return LHA_PortData;
+}
+int Slow_Find_iDate(int date, Intor Date_list)
+{
+    int index = 0;
+    while(Date_list[index] < date)    index += 1;
+    return index;
+}
+double average(const Vector& v)
+{
+    double sum = 0;
+    for(auto& e:v)
+        sum+=e;
+    return sum/( (double) v.size()+0.0);
+}
+double weighted_sum(const Vector& v, const Vector& weight) {
+    double w_sum_v=0;
+    for(size_t i=0; i<v.size(); i++)  w_sum_v += v[i] * weight[i];
+    return w_sum_v;
+}
+double weighted_average_from_extreme(Vector v, double extreme) {
+    double sum = 0;
+    double weigth;
+    double t_weight = 0;
+    bool lowerNumers = false;
+    if(v[0] < extreme) lowerNumers = true;
+
+    for(auto& e:v)
+    {
+        if(lowerNumers) weigth = (extreme - e);
+        if(!lowerNumers) weigth = (e - extreme);
+        t_weight += weigth;
+        sum += e * weigth;
+    }
+    return sum/t_weight;
+}
+Vector weightes_from_extreme(Vector v, double extreme)
+{
+    for(auto& e:v)
+        e = abs(extreme-e);
+    return v;
+}
+/*Vector Ranked_from_extreme(Vector v, double extreme)
+{
+    Vector ranked(v.size());
+    for(size_t i; i<v.size(); v++)
+        ranked[i] = abs(extreme-e);
+    return v;
+}*/
+//Simple saving individual files
+//for (int file = 0; file < fileNames.size(); ++file)   Save(folderName + fileNames[file], DataSet[file]);
+
+//Plot data left as function of missing data condition
+/*
+for (double i = 0; i<1; i+=0.005) {
+Matrix Rs_i = Edit_Rs(Rs, i);
+cout << "\n" << i << ":" << Rs_i.size();
+}
+*/
+
+
+/*
+
+*/

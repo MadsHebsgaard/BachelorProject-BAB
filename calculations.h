@@ -10,6 +10,8 @@
 #include <ctime>
 #include <functional>
 
+#include "ui.h"
+
 using namespace std;
 using Intor = vector<int>;
 using Intrix = vector<vector<int>>;
@@ -23,10 +25,10 @@ vector<Matrix> Overlapping_ID_Matrix(Matrix A, Matrix B, int ID_row);
 //dir for data
 void defineFilePaths(string& incr, string& Exo_FilePath, string& Proccessed_FilePath, string& Proccessed_FilePath_inc, string& Proccessed_Dly, string& Proccessed_Mly, string& Proccessed_Yly)
 {
+
     Exo_FilePath = "Data/Input/Exo_Files/";
+    //Proccessed_FilePath = "Data/Input/Processed_Files/";
     Proccessed_FilePath = "Data/Input/Processed_Files_test2/";
-    //Proccessed_FilePath = "Data/Input/Processed_Files_new2/";
-    //Proccessed_FilePath = "Data/Input/Processed_Files_new3/";
 
     Proccessed_Dly = Proccessed_FilePath+"Dly/";
     Proccessed_Mly = Proccessed_FilePath+"Mly/";
@@ -35,7 +37,75 @@ void defineFilePaths(string& incr, string& Exo_FilePath, string& Proccessed_File
 }
 
 
+
 //Core calculations
+double CovSP500(Vector Stock, Vector sp500, int iStart_sp500, int iEnd_sp500, int iStart_DR, bool logarithm)
+{
+    int d_iDates = iEnd_sp500 - iStart_sp500 + 1;
+    double Mean_Stock = 0, Mean_sp500 = 0, Covv = 0;
+    int trading_Days = 0;
+
+    //Mean
+    for (int i = 0; i < d_iDates; i++)
+    {
+        if(Stock[i+iStart_DR] != -2)
+        {
+            trading_Days++;
+            if(logarithm)
+            {
+                Mean_Stock += log10(1+Stock[i + iStart_DR]);
+                Mean_sp500 += log10(1+sp500[i + iStart_sp500]);
+            }
+            else
+            {
+                Mean_Stock += Stock[i + iStart_DR];
+                Mean_sp500 += sp500[i + iStart_sp500];
+            }
+        }
+    }
+    Mean_Stock /= trading_Days;
+    Mean_sp500 /= trading_Days;
+
+    //CovSP500_log
+    for (int i = 0; i < d_iDates; i++)
+    {
+        if(Stock[i+iStart_DR] != -2)
+        {
+            if(logarithm)   Covv += (log10(1+Stock[i+iStart_DR]) - Mean_Stock) * (log10(1+sp500[i + iStart_sp500]) - Mean_sp500);
+            else            Covv += (Stock[i+iStart_DR] - Mean_Stock) * (sp500[i + iStart_sp500] - Mean_sp500);
+        }
+    }
+    return Covv /(trading_Days - 1);
+}
+double Var(Vector sp500, int Start_number, int End_number, bool logarithm)
+{
+    double Mean = 0, Variance = 0;
+    int trading_Days=0;
+
+    //Mean
+    for (int i = Start_number; i < End_number+1; i++)
+    {
+        if(sp500[i] != -2)
+        {
+            trading_Days++;
+            if (logarithm)  Mean += log10(1+sp500[i]);
+            else            Mean += sp500[i];
+        }
+    }
+    Mean /= trading_Days;
+
+    //Variance
+    for (int i = Start_number; i < End_number+1; i++)
+    {
+        if(sp500[i] != -2)
+        {
+            if(logarithm)   Variance += (log10(1+sp500[i]) - Mean) * (log10(1+sp500[i]) - Mean);
+            else            Variance += (sp500[i] - Mean) * (sp500[i] - Mean);
+        }
+    }
+    return Variance /(trading_Days - 1);
+}
+/*
 double CovSP500(Vector Stock, Vector sp500, int iStart_sp500, int iEnd_sp500, int iStart_DR)
 {
     int d_iDates = iEnd_sp500 - iStart_sp500 + 1;
@@ -55,7 +125,7 @@ double CovSP500(Vector Stock, Vector sp500, int iStart_sp500, int iEnd_sp500, in
     Mean_Stock /= trading_Days;
     Mean_sp500 /= trading_Days;
 
-    //CovSP500
+    //CovSP500_log
     for (int i = 0; i < d_iDates; i++)
     {
         if(Stock[i+iStart_DR] != -2)
@@ -66,9 +136,6 @@ double CovSP500(Vector Stock, Vector sp500, int iStart_sp500, int iEnd_sp500, in
 double Var(Vector sp500, int Start_number, int End_number)
 {
     double Mean = 0, Variance = 0;
-    //int d_dates = End_number-Start_number+1;
-    //if(sp500.size() < d_dates) d_dates = sp500.size();
-
     int trading_Days=0;
 
     //Mean
@@ -90,14 +157,15 @@ double Var(Vector sp500, int Start_number, int End_number)
     }
     return Variance /(trading_Days - 1);
 }
+ */
 Vector Calculate_akk_r(Vector stock, Vector sp500, Vector riskFree, int iLength, int iStart_DR, int iStart_sp500)
 {
     double stockReturn=1, sp500Return=1, riskFreeReturn=1;
-    int Active_days = 0;
+    //int Active_days = 0;
     for (int i = 0; i < iLength; ++i)
     {
         if(stock[i+iStart_DR] < -1.5) continue;
-        Active_days++;
+        //Active_days++;
         stockReturn *= (1 + stock[i+iStart_DR]);
         sp500Return *= (1 + sp500[i+iStart_sp500]);
         riskFreeReturn *= (1 + riskFree[i+iStart_sp500]);
@@ -105,16 +173,18 @@ Vector Calculate_akk_r(Vector stock, Vector sp500, Vector riskFree, int iLength,
     return {stockReturn-1,sp500Return-1,riskFreeReturn-1};
     //return pow(stockReturn,263.5104/Active_days)-1;
 }
-double Calculate_Beta(const Vector& stock, const Vector& sp500, int iStart, int iEnd, int iStart_Rs)
+
+double Calculate_Beta(const Vector& stock, const Vector& sp500, int iStart, int iEnd, int iStart_Rs, bool logarithm)
 {
-    double cov = CovSP500(std::move(stock), sp500, iStart, iEnd, iStart_Rs);
-    double var = Var(sp500, iStart, iEnd);
+    double cov = CovSP500(std::move(stock), sp500, iStart, iEnd, iStart_Rs, logarithm);
+    double var = Var(sp500, iStart, iEnd, logarithm);
     return (cov/var);
 }
 double Calculate_Alpha(double beta, double mu_stock, double mu_sp500, double mu_rf) {
     return mu_stock - (mu_rf + beta * (mu_sp500 - mu_rf));
 }
-Matrix Calculate_Performance(Matrix Rs, Matrix MC, Intrix iDates, const Vector& sp500, const Vector& riskFree, const Intor& Dates, const Intor& iPeriod, double i_Inflation, int minTradingDays, bool prePeriodNoBiasRisk)
+Matrix Calculate_Performance(Matrix Rs, Matrix MC, Intrix iDates, const Vector& sp500, const Vector& riskFree,
+        const Intor& Dates, const Intor& iPeriod, double i_Inflation, int minTradingDays, bool prePeriodNoBiasRisk, bool logarithm)
 {
     Matrix Data(9, Vector(0));
     int iEnd_sp500, iStart_Rs, iLength, Active_days;
@@ -143,7 +213,8 @@ Matrix Calculate_Performance(Matrix Rs, Matrix MC, Intrix iDates, const Vector& 
         Active_days = iLength - emptyCount;
         if(Active_days < 1) continue;
 
-        double AccptRatio = 2.0/3.0;  //1 = all trading days required, 0=no trading days required (only when prePeriodNoBiasRisk=true, thus when backtesting pre period)
+        //1 = all trading days required, 0=no trading days required (only when prePeriodNoBiasRisk=true, thus when backtesting pre period)
+        double AccptRatio = 2.0/3.0;
         if(prePeriodNoBiasRisk)
             if(Active_days < (double) iLength * AccptRatio)  continue;
 
@@ -169,8 +240,7 @@ Matrix Calculate_Performance(Matrix Rs, Matrix MC, Intrix iDates, const Vector& 
         else
             continue;
 
-        //Stock is now safe and data is collected
-
+        //Stock is now safe for period and data is ready to be collected
         //Calculate akk. returns
         akk_i_returns = Calculate_akk_r(Rs[i], sp500, riskFree, iLength, iStart_Rs, iPeriod[0]);
         i_return = akk_i_returns[0];
@@ -178,7 +248,7 @@ Matrix Calculate_Performance(Matrix Rs, Matrix MC, Intrix iDates, const Vector& 
         i_riskFree_r = akk_i_returns[2];
 
         //Calculate beta    //Starts minTradingDays before period
-        i_Beta = Calculate_Beta(Rs[i], sp500, iPeriod[0]-minTradingDays, iEnd_sp500, iStart_Rs-minTradingDays);
+        i_Beta = Calculate_Beta(Rs[i], sp500, iPeriod[0]-minTradingDays, iEnd_sp500, iStart_Rs-minTradingDays, logarithm);
 
         //Calculate alpha
         i_Alpha = Calculate_Alpha(i_Beta, i_return, i_sp500_r, i_riskFree_r);
@@ -191,28 +261,10 @@ Matrix Calculate_Performance(Matrix Rs, Matrix MC, Intrix iDates, const Vector& 
 
     return Data;
 }
-vector<Matrix> PrePost_Performance(const Matrix& DR, const Matrix& MC, const Intrix& iDates, const Vector& sp500, const Vector& riskFree, const Intor& Dates, Intrix iPeriod, const Vector& Inflation_factor)
+Vector PortfolioReturns_method(const Intor& PERMNO, const Vector& weightes, const Intrix& iDates,
+        const Intor& iPeriod, const Matrix& Rs, const Vector& riskFree, const string& method)
 {
-    vector<Matrix> A(0);
-    //size of BetaOverlap is a tradeoff of bias vs robust, makes Post_beta more robust at the cost of making Post_beta biased towards Pre_beta. Tradeoff is probably not bad.
-    int BetaPrePeriod = 500, BetaOverlap = 250;  //Dly
-    if (iPeriod[1][0] - iPeriod[0][0] == 12)    //Mly
-    {
-        BetaPrePeriod = 24;
-        BetaOverlap = 12;
-    }
-    //BetaPrePeriod = 0;
-    //BetaOverlap = 10;
 
-
-    Matrix Pre_Data = Calculate_Performance(DR, MC, iDates, sp500, riskFree, Dates, iPeriod[0],
-            Inflation_factor[0], BetaPrePeriod, true);
-    Matrix Post_Data = Calculate_Performance(DR, MC, iDates, sp500, riskFree, Dates, iPeriod[1], Inflation_factor[1],
-            BetaOverlap, false);
-    return Overlapping_ID_Matrix(Pre_Data, Post_Data, 3);
-}
-Vector PortfolioReturns_method(const Intor& PERMNO, const Vector& weightes, const Intrix& iDates, const Intor& iPeriod, const Matrix& Rs, const Vector& riskFree, const string& method)
-{
     //Initiating data structures
     size_t periodLength = iPeriod[1] - iPeriod[0] + 1;
     size_t N = PERMNO.size();
@@ -301,51 +353,40 @@ Vector PortfolioReturns_method(const Intor& PERMNO, const Vector& weightes, cons
     return portfolio_return;
 }
 
+bool checkLineInFile(const std::string& filename, const std::string& targetLine) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        // Failed to open the file
+        return false;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line == targetLine) {
+            // Found the target line
+            file.close();
+            return true;
+        }
+    }
+
+    file.close();
+    return false;
+}
+
+string vectorToString(const Vector& vec) {
+    stringstream ss;
+    ss << "{ ";
+    for (size_t i = 0; i < vec.size(); i++) {
+        ss << vec[i];
+        if (i != vec.size() - 1) {
+            ss << ", ";
+        }
+    }
+    ss << "}";
+    return ss.str();
+}
 
 //Important functions
-Matrix Edit_DR(Matrix A, double max_ratio, int minTradingDays)
-{
-    Matrix DR_ny(0);
-    int traek, zero_total;
-    int max_traek = 6;
-    int replace = -2;
-    int continue_amount = 0;
-
-    for (auto & stock : A)
-    {
-        zero_total = 0;
-        traek = 0;
-        if (stock.size() < minTradingDays)   {continue_amount++; continue;}
-        for (int j = 0; j < stock.size(); ++j)
-        {
-            if(stock[j] == 0 or stock[j] == replace)    {traek++; zero_total++;}
-            else                 traek = 0;
-
-            if      (traek == max_traek)  for(int k = 1; k <= max_traek; ++k) stock[j - max_traek + k] = replace;
-            else if (traek > max_traek) stock[j] = replace;
-        }
-        if((zero_total+0.0) / ((double) stock.size()) < max_ratio)
-            DR_ny.push_back(stock);
-    }
-
-    cout << "\ncontinue_amount = " << continue_amount;
-    cout << "\nDR_ny size = " << DR_ny.size();
-    cout << "\nZero ratio too high = " << A.size() - DR_ny.size() - continue_amount;
-    cout << "\n\n";
-
-    return DR_ny;
-}
-Intrix Remove_Missing_ID(Intrix A, Vector v)
-{
-    Intrix B(0);
-    size_t k=0;
-    for (auto & stock : A)
-    {
-        //if(k==v.size()-1) break;
-        if(v[k] == stock[0]) {k++;   B.push_back(stock);}
-    }
-    return B;
-}
 Matrix Remove_Missing_ID(Matrix A, Vector v)
 {
     Matrix B(0);
@@ -354,6 +395,44 @@ Matrix Remove_Missing_ID(Matrix A, Vector v)
     {
         //if(k==v.size()-1) break;
         if(abs(v[k] - stock[0])<0.1) {k++;   B.push_back(stock);}
+    }
+    return B;
+}
+Matrix Edit_Rs(Matrix A, double max_ratio)
+{
+    Matrix Rs_ny(0);
+    int traek, zero_total;
+    int max_traek = 6;
+    int replace = -2;
+
+    for (auto & stock : A)
+    {
+        zero_total = 0;
+        traek = 0;
+        for (size_t j = 0; j < stock.size(); ++j)
+        {
+            if(stock[j] == 0 or round(stock[j]) == replace)
+                {traek++; zero_total++;}
+            else traek = 0;
+
+            if (traek == max_traek)
+                for(size_t k = 1; k <= max_traek; ++k)
+                    stock[j - max_traek + k] = replace;
+            else if (traek > max_traek)
+                stock[j] = replace;
+        }
+        if((zero_total+0.0) / ((double) stock.size()) < max_ratio)
+            Rs_ny.push_back(stock);
+    }
+    return Rs_ny;
+}
+Intrix Remove_Missing_ID(Intrix A, Vector v)
+{
+    Intrix B(0);
+    size_t k=0;
+    for (auto & stock : A)
+    {
+        if(v[k] == stock[0]) {k++;   B.push_back(stock);}
     }
     return B;
 }
@@ -396,11 +475,7 @@ double sum(const Vector& v) {
     for(auto& e:v)  sum_v += e;
     return sum_v;
 }
-double weighted_sum(const Vector& v, const Vector& weight) {
-    double w_sum_v=0;
-    for(size_t i=0; i<v.size(); i++)  w_sum_v += v[i] * weight[i];
-    return w_sum_v;
-}
+
 double weighted_average(const Vector& v, const Vector& weight) {
     double w_sum_v=0;
     for(size_t i=0; i<v.size(); i++)
@@ -409,43 +484,83 @@ double weighted_average(const Vector& v, const Vector& weight) {
     }
     return w_sum_v / sum(weight);
 }
-double average(const Vector& v)
-{
-    double sum = 0;
-    for(auto& e:v)
-        sum+=e;
-    return sum/( (double) v.size()+0.0);
-}
-double weighted_average_from_extreme(Vector v, double extreme) {
-    double sum = 0;
-    double weigth;
-    double t_weight = 0;
-    bool lowerNumers = false;
-    if(v[0] < extreme) lowerNumers = true;
+Vector RankByExtreme(const Vector& v, const double& extreme) {
+    size_t N = v.size();
+    vector<size_t> indices(N);
+    for (size_t i = 0; i < N; ++i)
+        indices[i] = i;
 
-    for(auto& e:v)
-    {
-        if(lowerNumers) weigth = (extreme - e);
-        if(!lowerNumers) weigth = (e - extreme);
-        t_weight += weigth;
-        sum += e * weigth;
-    }
-    return sum/t_weight;
-}
-Vector weightes_from_extreme(Vector v, double extreme)
-{
-    double weigth;
-    bool lowerNumers = false;
-    if(v[0] < extreme) lowerNumers = true;
+    //Find indexes of smallest to biggest absolute difference
+    for (size_t i = 0; i < N; ++i)
+        for (size_t j = i + 1; j < N; ++j)
+            if (abs(v[indices[i]] - extreme) > abs(v[indices[j]] - extreme))
+                swap(indices[i], indices[j]);
 
-    for(auto& e:v)
-    {
-        if(lowerNumers)  weigth = (extreme - e);
-        if(!lowerNumers) weigth = (e - extreme);
-        e = weigth;
-    }
-    return v;
+    //Find rankings of each element in v
+    Vector rankings(N);
+    for (int i = 0; i<N; ++i)
+        rankings[indices[i]] = i+1;
+
+    return rankings;
 }
+double calculateMedianInRange(const Vector& values, double too_low, double too_high) {
+    Vector filteredValues;
+
+    // Filter values within the specified range
+    for (double value : values) {
+        if (value >= too_low && value <= too_high) {
+            filteredValues.push_back(value);
+        }
+    }
+
+    // Sort the filtered values in ascending order
+    size_t size = filteredValues.size();
+    for (size_t i = 0; i < size - 1; ++i) {
+        for (size_t j = 0; j < size - i - 1; ++j) {
+            if (filteredValues[j] > filteredValues[j + 1]) {
+                double temp = filteredValues[j];
+                filteredValues[j] = filteredValues[j + 1];
+                filteredValues[j + 1] = temp;
+            }
+        }
+    }
+
+    size_t filteredSize = filteredValues.size();
+    if (filteredSize % 2 == 0) {
+        // If the number of filtered elements is even, return the average of the middle two values
+        return (filteredValues[filteredSize / 2 - 1] + filteredValues[filteredSize / 2]) / 2.0;
+    } else {
+        // If the number of filtered elements is odd, return the middle value
+        return filteredValues[filteredSize / 2];
+    }
+}
+double calculateQuantileInRange(const Vector& values, double too_low, double too_high, double quantile) {
+    Vector filteredValues;
+
+    // Filter values within the specified range
+    for (double value : values) {
+        if (value >= too_low && value <= too_high) {
+            filteredValues.push_back(value);
+        }
+    }
+
+    // Sort the filtered values in ascending order
+    std::sort(filteredValues.begin(), filteredValues.end());
+
+    size_t filteredSize = filteredValues.size();
+    double index = ((double) filteredSize - 1) * quantile;
+
+    int lowerIndex = static_cast<int>(index);
+    int upperIndex = lowerIndex + 1;
+
+    double lowerValue = filteredValues[lowerIndex];
+    double upperValue = filteredValues[upperIndex];
+
+    double quantileValue = lowerValue + (upperValue - lowerValue) * (index - lowerIndex);
+
+    return quantileValue;
+}
+
 
 Vector Matrix_Column(Matrix A, int j)
 {
@@ -455,7 +570,7 @@ Vector Matrix_Column(Matrix A, int j)
 }
 Vector int_to_double(Intor intVec)
 {
-    vector<double> doubleVec(intVec.begin(), intVec.end());
+    Vector doubleVec(intVec.begin(), intVec.end());
     return doubleVec;
 }
 Vector skip_First_X(Vector v, int start_from)
@@ -593,12 +708,6 @@ int Find_iDate(int date, Intor Date_list)
         else index_apprx++;
     }
     return index_apprx;
-}
-int Slow_Find_iDate(int date, Intor Date_list)
-{
-    int index = 0;
-    while(Date_list[index] < date)    index += 1;
-    return index;
 }
 Intrix Mly_Dates_to_iDates(Intrix Rs_Dates, int start_j)
 {

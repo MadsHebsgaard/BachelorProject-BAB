@@ -23,18 +23,15 @@ Matrix Edit_DR(Matrix A, double max_ratio, int minTradingDays);
 
 void HowToGetStarted()
 {
+    string Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly, incr;
+    defineFilePaths(incr, Exo_FilePath, Proccessed_FilePath, Proccessed_FilePath_incr, Proccessed_Dly, Proccessed_Mly, Proccessed_Yly);
+
     mkdir("Data");
     mkdir("Data/Input");
-    string exoDirName = "Data/Input/Exo_Files";
-    mkdir(exoDirName.c_str());
-    cout << "\nYou need to put the following .txt files in the folder \"" << exoDirName << "\":" << endl;
-    cout << "   - " << "DR\n";
-    cout << "   - " << "Dly_YearlyRiskFreeReturn\n";
-    cout << "   - " << "Dly_sp500\n";
-    cout << "   - " << "Dly_DateList\n";
-    cout << "   - " << "Mth_PrevCap\n";
+    mkdir(Exo_FilePath.c_str());
+    cout << "\nYou need to put the missing files in the folder \"" << Exo_FilePath << "\"" << endl;
 
-    cout << "When all the files are present, Run \"Process_Files()\"." << endl << endl;
+    cout << "When all the files are present, Run \"Setup_all_files()\" again." << endl << endl;
 }
 
 Vector Load_Vector(const string& fn)
@@ -128,13 +125,10 @@ Matrix Load_DR(const string& fn, int max)
     int Blanc_r = -2;
 
     if(max < 1)     max = 40000;
-    //DR.reserve(max, Vector(26000)); // 26000 >= SP500.size()
-
     fil >> junk;
     fil >> junk;
     fil >> junk;
     fil >> IDnew;
-
     cout << "Loaded 0/~36150 = 0%.\n";
 
     while(!fil.eof())
@@ -142,7 +136,6 @@ Matrix Load_DR(const string& fn, int max)
         Stock = Vector(0);
         Stock.push_back(IDnew);
         bool FirstRealReturn = true;
-
         {
             if(fil.eof()) break;
             fil >> date;
@@ -165,7 +158,6 @@ Matrix Load_DR(const string& fn, int max)
             else if(fil.eof()) break;
             date_old = date;
             fil >> date;
-
             while(date_old == date)
             {
                 fil >> r;

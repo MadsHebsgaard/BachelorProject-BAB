@@ -28,7 +28,7 @@ using Matrix = vector<vector<double>>;
 //Testing of portfolio function
 /*
 Matrix Rs = Load_Rs_Compressed("Data/Input/Processed_Files/Mly/Rs.txt", 5000);
-//Rs = Edit_DR(Rs, 0.4, 10);    //Dly problem when TD is low and R = 1. May cause some bias, so turned off
+//Rs = Edit_Rs(Rs, 0.4, 10);    //Dly problem when TD is low and R = 1. May cause some bias, so turned off
 
 string methodName = "testing", folderName="testing", incr="Mly";
 vector<string> logMessage, fileNames;
@@ -126,7 +126,7 @@ void OldTestCalculations(int max, double max_ratio, int minTradingDays)
 {
     //DR with condition for inclusion
     Matrix DR = Load_Rs_Compressed("DR_Compressed.txt", max);
-    Matrix DR_ny = Edit_DR(DR,max_ratio, minTradingDays);
+    Matrix DR_ny = Edit_Rs(DR,max_ratio, minTradingDays);
 
     Intrix iPeriods = Load_Intrix("Yearly_iPeriods_1926_1949.txt", -1);
     //Intrix iPeriods = Load_Intrix("Yearly_iPeriods_1950_1973.txt", -1);
@@ -173,7 +173,7 @@ void TestCalculations(string folderName, int max, double max_ratio, int minTradi
 {
     //DR with condition for inclusion
     Matrix DR = Load_Rs_Compressed("DR_Compressed.txt", max);
-    Matrix DR_ny = Edit_DR(DR,max_ratio,minTradingDays);
+    Matrix DR_ny = Edit_Rs(DR,max_ratio,minTradingDays);
 
     //iDates with same stocks as DR_ny
     Intrix iDates = Load_Intrix("DR_iDates.txt", max);
@@ -235,7 +235,7 @@ void Era_PrePost_Period_Calculations(string folderName, double max_ratio, int mi
     string Proccessed_FilePath = "Data/Input/Processed_Files/";
 
     //DR with condition for inclusion
-    Matrix DR_ny = Edit_DR(DR,max_ratio,minTradingDays);
+    Matrix DR_ny = Edit_Rs(DR,max_ratio,minTradingDays);
 
     //iDates with same stocks as DR_ny
     Intrix iDates = Load_Intrix(Proccessed_FilePath+"DR_iDates.txt", -1);
@@ -298,7 +298,7 @@ Load SP500 //TODO
 vector<double> beta_period(3);
 for (int i = 0; i < 3; ++i)
 {
-    beta_period[i] = CovSP500(SP500, SP500, period_nr[0+i], period_nr[1+i]);
+    beta_period[i] = CovSP500_log(SP500, SP500, period_nr[0+i], period_nr[1+i]);
 }
 */  // vector || pushback
 /*
